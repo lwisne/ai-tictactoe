@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/player.dart';
 import '../../domain/models/position.dart';
+import '../extensions/player_extensions.dart';
 
 class BoardCell extends StatelessWidget {
   final Player player;

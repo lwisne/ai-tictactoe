@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tic_tac_toe/main.dart';
+import 'package:tic_tac_toe/presentation/extensions/game_result_extensions.dart';
+import 'package:tic_tac_toe/presentation/extensions/player_extensions.dart';
 
 void main() {
   testWidgets('App loads without errors', (WidgetTester tester) async {

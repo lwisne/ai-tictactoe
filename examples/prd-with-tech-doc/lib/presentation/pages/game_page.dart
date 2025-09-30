@@ -10,6 +10,8 @@ import '../blocs/game_bloc/game_event.dart';
 import '../blocs/game_bloc/game_state.dart';
 import '../blocs/score_bloc/score_bloc.dart';
 import '../blocs/score_bloc/score_event.dart';
+import '../extensions/game_result_extensions.dart';
+import '../extensions/player_extensions.dart';
 import '../widgets/game_board.dart';
 
 class GamePage extends StatelessWidget {

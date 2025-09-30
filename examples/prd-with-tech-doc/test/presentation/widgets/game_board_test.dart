@@ -5,6 +5,7 @@ import 'package:tic_tac_toe/domain/models/game_mode.dart';
 import 'package:tic_tac_toe/domain/models/game_state.dart' as domain;
 import 'package:tic_tac_toe/domain/models/player.dart';
 import 'package:tic_tac_toe/domain/models/position.dart';
+import 'package:tic_tac_toe/presentation/extensions/player_extensions.dart';
 import 'package:tic_tac_toe/presentation/widgets/board_cell.dart';
 import 'package:tic_tac_toe/presentation/widgets/game_board.dart';
 

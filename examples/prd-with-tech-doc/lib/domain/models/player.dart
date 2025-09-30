@@ -3,17 +3,7 @@ enum Player {
   o,
   none;
 
-  String get symbol {
-    switch (this) {
-      case Player.x:
-        return 'X';
-      case Player.o:
-        return 'O';
-      case Player.none:
-        return '';
-    }
-  }
-
+  /// Returns the opponent player (domain logic)
   Player get opponent {
     switch (this) {
       case Player.x:

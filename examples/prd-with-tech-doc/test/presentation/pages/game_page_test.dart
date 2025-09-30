@@ -14,6 +14,8 @@ import 'package:tic_tac_toe/presentation/blocs/game_bloc/game_state.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_bloc.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_event.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_state.dart';
+import 'package:tic_tac_toe/presentation/extensions/game_result_extensions.dart';
+import 'package:tic_tac_toe/presentation/extensions/player_extensions.dart';
 import 'package:tic_tac_toe/presentation/pages/game_page.dart';
 import 'package:tic_tac_toe/presentation/widgets/game_board.dart';
 
