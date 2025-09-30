@@ -1,31 +1,54 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/score.dart';
+import '../models/score_model.dart';
 
+/// Repository for Score persistence
+///
+/// Responsibilities:
+/// - Convert between domain entities (Score) and data models (ScoreModel)
+/// - Handle persistence using SharedPreferences
+/// - Manage serialization/deserialization
 class ScoreRepository {
-  static const String _winsKey = 'wins';
-  static const String _lossesKey = 'losses';
-  static const String _drawsKey = 'draws';
+  static const String _scoreKey = 'score';
 
   /// Loads the score from persistent storage
+  ///
+  /// Returns a domain Score entity by:
+  /// 1. Loading individual values from SharedPreferences
+  /// 2. Creating ScoreModel from values
+  /// 3. Converting ScoreModel to Score entity
   Future<Score> loadScore() async {
     final prefs = await SharedPreferences.getInstance();
-    final wins = prefs.getInt(_winsKey) ?? 0;
-    final losses = prefs.getInt(_lossesKey) ?? 0;
-    final draws = prefs.getInt(_drawsKey) ?? 0;
 
-    return Score(
+    // Load individual keys
+    final wins = prefs.getInt('wins') ?? 0;
+    final losses = prefs.getInt('losses') ?? 0;
+    final draws = prefs.getInt('draws') ?? 0;
+
+    final model = ScoreModel(
       wins: wins,
       losses: losses,
       draws: draws,
     );
+
+    return model.toEntity();
   }
 
   /// Saves the score to persistent storage
+  ///
+  /// Converts domain entity to data model, then persists:
+  /// 1. Convert Score entity to ScoreModel
+  /// 2. Serialize ScoreModel to JSON
+  /// 3. Save to SharedPreferences
   Future<void> saveScore(Score score) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_winsKey, score.wins);
-    await prefs.setInt(_lossesKey, score.losses);
-    await prefs.setInt(_drawsKey, score.draws);
+    final model = ScoreModel.fromEntity(score);
+
+    // Store as individual keys for simplicity
+    // In a real app, we'd serialize to JSON string
+    await prefs.setInt('wins', model.wins);
+    await prefs.setInt('losses', model.losses);
+    await prefs.setInt('draws', model.draws);
   }
 
   /// Resets the score to zero

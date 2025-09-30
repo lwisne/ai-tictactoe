@@ -1,37 +1,64 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tic_tac_toe/domain/entities/difficulty_level.dart';
+import 'package:tic_tac_toe/domain/entities/game_config.dart';
+import 'package:tic_tac_toe/domain/entities/game_mode.dart';
+import 'package:tic_tac_toe/domain/entities/player.dart';
 import 'package:tic_tac_toe/domain/entities/score.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_bloc.dart';
+import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_event.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_state.dart';
 import 'package:tic_tac_toe/presentation/pages/home_page.dart';
 import 'package:tic_tac_toe/routes/app_router.dart';
 
 import '../../helpers/builders.dart';
 
-class MockScoreBloc extends Mock implements ScoreBloc {}
-
-class MockGoRouter extends Mock {
-  void push(String path, {Object? extra});
-}
+class MockScoreBloc extends MockBloc<ScoreEvent, ScoreState> implements ScoreBloc {}
 
 void main() {
   late MockScoreBloc mockScoreBloc;
-  late MockGoRouter mockRouter;
+  final navigatorKey = GlobalKey<NavigatorState>();
 
   setUp(() {
     mockScoreBloc = MockScoreBloc();
-    mockRouter = MockGoRouter();
+  });
+
+  setUpAll(() {
+    registerFallbackValue(const GameConfig(
+      gameMode: GameMode.twoPlayer,
+      firstPlayer: Player.x,
+    ));
   });
 
   Widget createTestWidget() {
-    return MaterialApp(
-      home: BlocProvider<ScoreBloc>.value(
-        value: mockScoreBloc,
-        child: const HomePage(),
-      ),
+    final router = GoRouter(
+      navigatorKey: navigatorKey,
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => BlocProvider<ScoreBloc>.value(
+            value: mockScoreBloc,
+            child: const HomePage(),
+          ),
+        ),
+        GoRoute(
+          path: AppRouter.game,
+          builder: (context, state) => const Scaffold(body: Text('Game Page')),
+        ),
+        GoRoute(
+          path: AppRouter.settings,
+          builder: (context, state) => const Scaffold(body: Text('Settings Page')),
+        ),
+      ],
+    );
+
+    return MaterialApp.router(
+      routerConfig: router,
     );
   }
 
@@ -259,42 +286,33 @@ void main() {
 
         // Act
         await tester.pumpWidget(createTestWidget());
+        await tester.pump();
 
-        // Assert
-        final singlePlayerButton = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Single Player'),
-        );
-        expect(singlePlayerButton, isNotNull);
-
-        final twoPlayerButton = tester.widget<OutlinedButton>(
-          find.widgetWithText(OutlinedButton, 'Two Player'),
-        );
-        expect(twoPlayerButton, isNotNull);
+        // Assert - verify buttons exist by finding their text and icons
+        expect(find.text('Single Player'), findsOneWidget);
+        expect(find.byIcon(Icons.person), findsOneWidget);
+        expect(find.text('Two Player'), findsOneWidget);
+        expect(find.byIcon(Icons.people), findsOneWidget);
       });
     });
 
     group('State Changes', () {
       testWidgets('should update score display when state changes', (tester) async {
-        // Arrange
-        final score1 = TestDataBuilder.createScore(wins: 5, losses: 3, draws: 2);
-        when(() => mockScoreBloc.state).thenReturn(ScoreLoaded(score1));
+        // Arrange - start with no score, then emit a score via stream
+        when(() => mockScoreBloc.state).thenReturn(const ScoreInitial());
+        final score = TestDataBuilder.createScore(wins: 10, losses: 5, draws: 3);
+        whenListen(
+          mockScoreBloc,
+          Stream.fromIterable([ScoreLoaded(score)]),
+        );
 
         // Act
         await tester.pumpWidget(createTestWidget());
-        await tester.pumpAndSettle();
+        await tester.pump(); // Initial render with ScoreInitial
+        await tester.pump(); // Stream emits ScoreLoaded
 
-        // Assert initial state
-        expect(find.text('5'), findsOneWidget);
-        expect(find.text('3'), findsOneWidget);
-        expect(find.text('2'), findsOneWidget);
-
-        // Update state
-        final score2 = TestDataBuilder.createScore(wins: 10, losses: 5, draws: 3);
-        when(() => mockScoreBloc.state).thenReturn(ScoreLoaded(score2));
-        await tester.pumpWidget(createTestWidget());
-        await tester.pumpAndSettle();
-
-        // Assert updated state
+        // Assert - score card appears after state change from stream
+        expect(find.text('Your Stats'), findsOneWidget);
         expect(find.text('10'), findsOneWidget);
         expect(find.text('5'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);

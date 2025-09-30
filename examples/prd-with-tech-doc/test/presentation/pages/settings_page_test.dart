@@ -75,7 +75,7 @@ void main() {
 
         // Act
         await tester.pumpWidget(createTestWidget());
-        await tester.pumpAndSettle();
+        await tester.pump(); // Use pump() instead of pumpAndSettle() for loading indicators
 
         // Assert
         expect(find.byType(CircularProgressIndicator), findsOneWidget);

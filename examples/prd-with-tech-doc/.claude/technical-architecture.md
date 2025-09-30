@@ -128,9 +128,299 @@ class GameState extends Equatable {
 
 ### 2. Data Transfer Model (Data Layer)
 
+**Purpose**: Data models live in `data/models/` and handle serialization/deserialization for persistence and API communication. They act as a bridge between external data sources and domain entities.
+
+**Key Responsibilities**:
+- JSON serialization (`toJson()`) and deserialization (`fromJson()`)
+- Conversion to/from domain entities (`toEntity()`, `fromEntity()`)
+- Data validation during deserialization
+- Handling API response formats
+- Managing persistence formats
+
+**Architecture Flow**:
+```
+External Source (API/DB) → Model (data/models) → Entity (domain/entities)
+                        ←                       ←
+```
+
+#### Example: Score Model (Simple Case)
+
+```dart
+// data/models/score_model.dart
+import '../../domain/entities/score.dart';
+
+/// Data Transfer Object for Score persistence
+class ScoreModel {
+  final int wins;
+  final int losses;
+  final int draws;
+
+  const ScoreModel({
+    required this.wins,
+    required this.losses,
+    required this.draws,
+  });
+
+  /// Deserialize from JSON
+  factory ScoreModel.fromJson(Map<String, dynamic> json) {
+    return ScoreModel(
+      wins: json['wins'] as int? ?? 0,
+      losses: json['losses'] as int? ?? 0,
+      draws: json['draws'] as int? ?? 0,
+    );
+  }
+
+  /// Serialize to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'wins': wins,
+      'losses': losses,
+      'draws': draws,
+    };
+  }
+
+  /// Convert from domain entity
+  factory ScoreModel.fromEntity(Score score) {
+    return ScoreModel(
+      wins: score.wins,
+      losses: score.losses,
+      draws: score.draws,
+    );
+  }
+
+  /// Convert to domain entity
+  Score toEntity() {
+    return Score(
+      wins: wins,
+      losses: losses,
+      draws: draws,
+    );
+  }
+}
+```
+
+#### Example: GameState Model (Complex with Nested Objects)
+
+GameState is a perfect example of when you NEED a data model for serialization, even if the entity is complex:
+
+```dart
+// data/models/game_state_model.dart
+import '../../domain/entities/game_state.dart';
+import '../../domain/entities/game_config.dart';
+import '../../domain/entities/player.dart';
+import '../../domain/entities/position.dart';
+import '../../domain/entities/game_result.dart';
+
+/// Data Transfer Object for GameState persistence
+///
+/// Handles serialization of complex nested structures:
+/// - 2D board array
+/// - Enum conversions (Player, GameResult, GameMode, etc.)
+/// - DateTime to ISO8601 strings
+/// - Position lists to JSON-friendly format
+class GameStateModel {
+  final List<List<String>> board;
+  final String currentPlayer;
+  final String result;
+  final String? winner;
+  final List<Map<String, int>>? winningLine;
+  final List<Map<String, int>> moveHistory;
+  final GameConfigModel config;
+  final String startTime;
+  final int elapsedTimeMs;
+
+  const GameStateModel({
+    required this.board,
+    required this.currentPlayer,
+    required this.result,
+    this.winner,
+    this.winningLine,
+    required this.moveHistory,
+    required this.config,
+    required this.startTime,
+    required this.elapsedTimeMs,
+  });
+
+  /// Deserialize from JSON - handles nested structures
+  factory GameStateModel.fromJson(Map<String, dynamic> json) {
+    return GameStateModel(
+      board: (json['board'] as List)
+          .map((row) => (row as List).map((cell) => cell as String).toList())
+          .toList(),
+      currentPlayer: json['currentPlayer'] as String,
+      result: json['result'] as String,
+      winner: json['winner'] as String?,
+      winningLine: json['winningLine'] != null
+          ? (json['winningLine'] as List)
+              .map((pos) => Map<String, int>.from(pos as Map))
+              .toList()
+          : null,
+      moveHistory: (json['moveHistory'] as List)
+          .map((pos) => Map<String, int>.from(pos as Map))
+          .toList(),
+      config: GameConfigModel.fromJson(json['config'] as Map<String, dynamic>),
+      startTime: json['startTime'] as String,
+      elapsedTimeMs: json['elapsedTimeMs'] as int,
+    );
+  }
+
+  /// Serialize to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'board': board,
+      'currentPlayer': currentPlayer,
+      'result': result,
+      'winner': winner,
+      'winningLine': winningLine,
+      'moveHistory': moveHistory,
+      'config': config.toJson(),
+      'startTime': startTime,
+      'elapsedTimeMs': elapsedTimeMs,
+    };
+  }
+
+  /// Convert from domain entity - handles enum and object conversions
+  factory GameStateModel.fromEntity(GameState state) {
+    return GameStateModel(
+      board: state.board
+          .map((row) => row.map((player) => _playerToString(player)).toList())
+          .toList(),
+      currentPlayer: _playerToString(state.currentPlayer),
+      result: _resultToString(state.result),
+      winner: state.winner != null ? _playerToString(state.winner!) : null,
+      winningLine: state.winningLine
+          ?.map((pos) => {'row': pos.row, 'col': pos.col})
+          .toList(),
+      moveHistory:
+          state.moveHistory.map((pos) => {'row': pos.row, 'col': pos.col}).toList(),
+      config: GameConfigModel.fromEntity(state.config),
+      startTime: state.startTime.toIso8601String(),
+      elapsedTimeMs: state.elapsedTime.inMilliseconds,
+    );
+  }
+
+  /// Convert to domain entity
+  GameState toEntity() {
+    return GameState(
+      board: board
+          .map((row) => row.map((cell) => _stringToPlayer(cell)).toList())
+          .toList(),
+      currentPlayer: _stringToPlayer(currentPlayer),
+      result: _stringToResult(result),
+      winner: winner != null ? _stringToPlayer(winner!) : null,
+      winningLine: winningLine
+          ?.map((pos) => Position(row: pos['row']!, col: pos['col']!))
+          .toList(),
+      moveHistory: moveHistory
+          .map((pos) => Position(row: pos['row']!, col: pos['col']!))
+          .toList(),
+      config: config.toEntity(),
+      startTime: DateTime.parse(startTime),
+      elapsedTime: Duration(milliseconds: elapsedTimeMs),
+    );
+  }
+
+  // Helper methods for enum conversions
+  static String _playerToString(Player player) {
+    switch (player) {
+      case Player.x: return 'x';
+      case Player.o: return 'o';
+      case Player.none: return 'none';
+    }
+  }
+
+  static Player _stringToPlayer(String value) {
+    switch (value) {
+      case 'x': return Player.x;
+      case 'o': return Player.o;
+      case 'none': return Player.none;
+      default: return Player.none;
+    }
+  }
+
+  static String _resultToString(GameResult result) {
+    switch (result) {
+      case GameResult.ongoing: return 'ongoing';
+      case GameResult.win: return 'win';
+      case GameResult.loss: return 'loss';
+      case GameResult.draw: return 'draw';
+    }
+  }
+
+  static GameResult _stringToResult(String value) {
+    switch (value) {
+      case 'ongoing': return GameResult.ongoing;
+      case 'win': return GameResult.win;
+      case 'loss': return GameResult.loss;
+      case 'draw': return GameResult.draw;
+      default: return GameResult.ongoing;
+    }
+  }
+}
+```
+
+**Repository for GameState**:
+
+```dart
+// data/repositories/game_state_repository.dart
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/entities/game_state.dart';
+import '../models/game_state_model.dart';
+
+class GameStateRepository {
+  static const String _savedGameKey = 'saved_game';
+
+  /// Save game: Entity → Model → JSON → Storage
+  Future<void> saveGame(GameState state) async {
+    final prefs = await SharedPreferences.getInstance();
+    final model = GameStateModel.fromEntity(state);
+    final jsonString = jsonEncode(model.toJson());
+    await prefs.setString(_savedGameKey, jsonString);
+  }
+
+  /// Load game: Storage → JSON → Model → Entity
+  Future<GameState?> loadGame() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_savedGameKey);
+
+    if (jsonString == null) return null;
+
+    try {
+      final json = jsonDecode(jsonString) as Map<String, dynamic>;
+      final model = GameStateModel.fromJson(json);
+      return model.toEntity();
+    } catch (e) {
+      await deleteSavedGame(); // Clean up corrupted data
+      return null;
+    }
+  }
+
+  Future<bool> hasSavedGame() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey(_savedGameKey);
+  }
+
+  Future<void> deleteSavedGame() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_savedGameKey);
+  }
+}
+```
+
+**Key Takeaways for Complex Models**:
+1. **Nested objects**: Create separate models (e.g., `GameConfigModel`)
+2. **Enums**: Convert to/from strings for JSON compatibility
+3. **Collections**: Map complex objects (e.g., `List<Position>` → `List<Map<String, int>>`)
+4. **DateTime**: Use ISO8601 strings for serialization
+5. **Error handling**: Try-catch with fallback in repositories
+
+#### Example: User Model (Complex Case with Freezed)
+
 ```dart
 // data/models/user_model.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/user.dart';
 
 part 'user_model.freezed.dart';
 part 'user_model.g.dart';
@@ -151,30 +441,16 @@ class UserModel with _$UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) =>
       _$UserModelFromJson(json);
 
-  // Basic data transformation - OK
-  factory UserModel.fromEntity(User user) {
-    return UserModel(
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      createdAt: user.createdAt,
-      avatarUrl: user.avatarUrl,
-      isVerified: user.isVerified,
-      roles: user.roles,
-    );
-  }
-
   // ❌ NO business logic like:
   // bool canPerformAction(Action action) { ... }  // Belongs in AuthService
   // int calculateAge() { ... }  // Belongs in UserService
   // bool hasPermission(Permission p) { ... }  // Belongs in PermissionService
 }
 
-// Extension for basic helpers is OK
+// Extension for conversions
 extension UserModelX on UserModel {
   // Simple computed properties - OK
   String get displayName => username.isEmpty ? email : username;
-  String get initials => username.substring(0, 2).toUpperCase();
 
   // Convert to domain entity - OK
   User toEntity() => User(
@@ -188,6 +464,55 @@ extension UserModelX on UserModel {
   );
 }
 ```
+
+#### Repository Pattern with Models
+
+```dart
+// data/repositories/score_repository.dart
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/entities/score.dart';
+import '../models/score_model.dart';
+
+class ScoreRepository {
+  /// Load score: Storage → Model → Entity
+  Future<Score> loadScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final wins = prefs.getInt('wins') ?? 0;
+    final losses = prefs.getInt('losses') ?? 0;
+    final draws = prefs.getInt('draws') ?? 0;
+
+    // Create model from raw data
+    final model = ScoreModel(
+      wins: wins,
+      losses: losses,
+      draws: draws,
+    );
+
+    // Convert to domain entity
+    return model.toEntity();
+  }
+
+  /// Save score: Entity → Model → Storage
+  Future<void> saveScore(Score score) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Convert domain entity to data model
+    final model = ScoreModel.fromEntity(score);
+
+    // Persist the model
+    await prefs.setInt('wins', model.wins);
+    await prefs.setInt('losses', model.losses);
+    await prefs.setInt('draws', model.draws);
+  }
+}
+```
+
+**Why Separate Models from Entities?**
+1. **Independence**: API changes don't affect domain logic
+2. **Flexibility**: Different persistence formats (JSON, SQLite, etc.)
+3. **Testability**: Mock data sources easily
+4. **Evolution**: API v1 → v2 without touching domain
+5. **Clean Architecture**: Clear layer boundaries
 
 ### 3. Value Object Model
 
