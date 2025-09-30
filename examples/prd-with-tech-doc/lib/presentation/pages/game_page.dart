@@ -12,30 +12,33 @@ import '../blocs/score_bloc/score_bloc.dart';
 import '../blocs/score_bloc/score_event.dart';
 import '../widgets/game_board.dart';
 
-class GamePage extends StatefulWidget {
+class GamePage extends StatelessWidget {
   final GameConfig? config;
 
   const GamePage({super.key, this.config});
 
   @override
-  State<GamePage> createState() => _GamePageState();
-}
-
-class _GamePageState extends State<GamePage> {
-  @override
-  void initState() {
-    super.initState();
-    // Start the game when the page loads
-    if (widget.config != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<GameBloc>().add(StartNewGame(widget.config!));
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocConsumer<GameBloc, GameBlocState>(
+    return BlocListener<GameBloc, GameBlocState>(
+      listenWhen: (previous, current) {
+        // Only initialize once when transitioning from Initial
+        return previous is GameInitial && current is! GameInitial;
+      },
+      listener: (context, state) {
+        // Game already started, do nothing
+      },
+      child: Builder(
+        builder: (context) {
+          // Start game if config is provided and game is initial
+          final currentState = context.watch<GameBloc>().state;
+          if (config != null && currentState is GameInitial) {
+            // Schedule the event for next frame to avoid calling during build
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              context.read<GameBloc>().add(StartNewGame(config!));
+            });
+          }
+
+          return BlocConsumer<GameBloc, GameBlocState>(
         listener: (context, state) {
           if (state is GameFinished) {
             _handleGameFinished(context, state);
@@ -98,6 +101,9 @@ class _GamePageState extends State<GamePage> {
             ),
           );
         },
+      );
+        },
+      ),
     );
   }
 

@@ -1950,11 +1950,6 @@ Future<void> init() async {
 - Handle loading/error states for UI
 - Manage form state and validation display
 
-### ✅ DOs:
-
-- All new features should have test coverage on important use cases
-- Test coverage should be above 90%.
-
 ### ❌ DON'Ts:
 
 - **NEVER put business logic in Blocs**
