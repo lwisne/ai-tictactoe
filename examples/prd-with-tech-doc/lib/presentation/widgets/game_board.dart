@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/game_state.dart' as domain;
-import '../../domain/entities/position.dart';
+import '../../domain/models/game_state.dart' as domain;
+import '../../domain/models/position.dart';
 import 'board_cell.dart';
 
 class GameBoard extends StatelessWidget {

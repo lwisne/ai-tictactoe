@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tic_tac_toe/domain/entities/game_config.dart';
-import 'package:tic_tac_toe/domain/entities/game_mode.dart';
-import 'package:tic_tac_toe/domain/entities/game_result.dart';
-import 'package:tic_tac_toe/domain/entities/player.dart';
-import 'package:tic_tac_toe/domain/entities/position.dart';
+import 'package:tic_tac_toe/domain/models/game_config.dart';
+import 'package:tic_tac_toe/domain/models/game_mode.dart';
+import 'package:tic_tac_toe/domain/models/game_result.dart';
+import 'package:tic_tac_toe/domain/models/player.dart';
+import 'package:tic_tac_toe/domain/models/position.dart';
 import 'package:tic_tac_toe/domain/services/game_service.dart';
 
 void main() {

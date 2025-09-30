@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../domain/entities/game_mode.dart';
-import '../../../domain/entities/game_result.dart';
-import '../../../domain/entities/player.dart';
+import '../../../domain/models/game_mode.dart';
+import '../../../domain/models/game_result.dart';
+import '../../../domain/models/player.dart';
 import '../../../domain/services/ai_service.dart';
 import '../../../domain/services/game_service.dart';
 import 'game_event.dart';

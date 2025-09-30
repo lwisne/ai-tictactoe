@@ -4,7 +4,7 @@
 
 **Core Principle**: Separation of business logic from UI state management within the Flutter app.
 
-- **Models**: THIN data structures with only properties and basic helpers (NO business logic)
+- **Models**: Data structures with JSON serialization (NO business logic)
 - **Services**: Handle ALL business logic, calculations, and complex rules
 - **Blocs/Cubits**: ONLY handle UI state, user interactions, and coordinate service calls
 - **Result**: Clean, testable, maintainable code with clear responsibilities
@@ -25,7 +25,7 @@ When starting a new Flutter project, provide Claude with:
 
 - **Services contain ALL business logic** within the Flutter app
 - **Blocs ONLY handle UI state and user interactions**
-- **Models are THIN data structures** - only properties and basic helpers
+- **Models are simple data structures with JSON serialization** - only properties, basic helpers, and toJson/fromJson
 - **NEVER put business logic in Blocs OR Models**
 - **NEVER use StatefulWidget** - All widgets must be StatelessWidget
 - **NEVER use Provider, Riverpod, GetX, or setState**
@@ -43,13 +43,16 @@ lib/
 │   ├── errors/
 │   └── utils/
 ├── data/
-│   ├── models/
 │   ├── datasources/
 │   │   ├── local/
 │   │   └── remote/
 │   └── repositories/
 ├── domain/
-│   ├── entities/
+│   ├── models/                # Data structures with JSON serialization
+│   │   ├── player.dart
+│   │   ├── game_state.dart
+│   │   ├── game_config.dart
+│   │   └── score.dart
 │   ├── repositories/          # Repository interfaces
 │   └── services/              # Business logic services
 │       ├── game_service.dart
@@ -73,254 +76,116 @@ lib/
 
 ## Model Templates
 
-### 1. Thin Entity Model (Domain Layer)
+### 1. Domain Model with JSON Serialization
+
+Models in `domain/models/` contain data structures AND JSON serialization methods. No separation between entities and data transfer models.
 
 ```dart
-// domain/entities/game_state.dart
+// domain/models/game_state.dart
 import 'package:equatable/equatable.dart';
+import 'game_result.dart';
+import 'player.dart';
+import 'position.dart';
+import 'game_config.dart';
 
+/// Game state model with JSON serialization
 class GameState extends Equatable {
-  final Board board;
+  final List<List<Player>> board;
   final Player currentPlayer;
-  final List<Move> moveHistory;
+  final GameResult result;
+  final Player? winner;
+  final List<Position>? winningLine;
+  final List<Position> moveHistory;
+  final GameConfig config;
+  final DateTime startTime;
   final Duration elapsedTime;
-  final GamePhase phase;
 
   const GameState({
     required this.board,
     required this.currentPlayer,
-    required this.moveHistory,
-    required this.elapsedTime,
-    required this.phase,
+    this.result = GameResult.ongoing,
+    this.winner,
+    this.winningLine,
+    this.moveHistory = const [],
+    required this.config,
+    required this.startTime,
+    this.elapsedTime = Duration.zero,
   });
 
   // ONLY basic helper methods - NO business logic
   GameState copyWith({
-    Board? board,
+    List<List<Player>>? board,
     Player? currentPlayer,
-    List<Move>? moveHistory,
+    GameResult? result,
+    Player? winner,
+    List<Position>? winningLine,
+    List<Position>? moveHistory,
+    GameConfig? config,
+    DateTime? startTime,
     Duration? elapsedTime,
-    GamePhase? phase,
   }) {
     return GameState(
       board: board ?? this.board,
       currentPlayer: currentPlayer ?? this.currentPlayer,
+      result: result ?? this.result,
+      winner: winner ?? this.winner,
+      winningLine: winningLine ?? this.winningLine,
       moveHistory: moveHistory ?? this.moveHistory,
+      config: config ?? this.config,
+      startTime: startTime ?? this.startTime,
       elapsedTime: elapsedTime ?? this.elapsedTime,
-      phase: phase ?? this.phase,
     );
   }
 
-  // Simple property accessors - OK
-  int get moveCount => moveHistory.length;
-  bool get isEmpty => moveHistory.isEmpty;
-  Move? get lastMove => moveHistory.isEmpty ? null : moveHistory.last;
-
-  // ❌ NO business logic like this:
-  // bool isValidMove(Move move) { ... }  // This belongs in GameService
-  // Player getWinner() { ... }  // This belongs in GameService
-  // Score calculateScore() { ... }  // This belongs in GameService
-
-  @override
-  List<Object?> get props => [board, currentPlayer, moveHistory, elapsedTime, phase];
-}
-```
-
-### 2. Data Transfer Model (Data Layer)
-
-**Purpose**: Data models live in `data/models/` and handle serialization/deserialization for persistence and API communication. They act as a bridge between external data sources and domain entities.
-
-**Key Responsibilities**:
-- JSON serialization (`toJson()`) and deserialization (`fromJson()`)
-- Conversion to/from domain entities (`toEntity()`, `fromEntity()`)
-- Data validation during deserialization
-- Handling API response formats
-- Managing persistence formats
-
-**Architecture Flow**:
-```
-External Source (API/DB) → Model (data/models) → Entity (domain/entities)
-                        ←                       ←
-```
-
-#### Example: Score Model (Simple Case)
-
-```dart
-// data/models/score_model.dart
-import '../../domain/entities/score.dart';
-
-/// Data Transfer Object for Score persistence
-class ScoreModel {
-  final int wins;
-  final int losses;
-  final int draws;
-
-  const ScoreModel({
-    required this.wins,
-    required this.losses,
-    required this.draws,
-  });
-
-  /// Deserialize from JSON
-  factory ScoreModel.fromJson(Map<String, dynamic> json) {
-    return ScoreModel(
-      wins: json['wins'] as int? ?? 0,
-      losses: json['losses'] as int? ?? 0,
-      draws: json['draws'] as int? ?? 0,
-    );
-  }
-
-  /// Serialize to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'wins': wins,
-      'losses': losses,
-      'draws': draws,
-    };
-  }
-
-  /// Convert from domain entity
-  factory ScoreModel.fromEntity(Score score) {
-    return ScoreModel(
-      wins: score.wins,
-      losses: score.losses,
-      draws: score.draws,
-    );
-  }
-
-  /// Convert to domain entity
-  Score toEntity() {
-    return Score(
-      wins: wins,
-      losses: losses,
-      draws: draws,
-    );
-  }
-}
-```
-
-#### Example: GameState Model (Complex with Nested Objects)
-
-GameState is a perfect example of when you NEED a data model for serialization, even if the entity is complex:
-
-```dart
-// data/models/game_state_model.dart
-import '../../domain/entities/game_state.dart';
-import '../../domain/entities/game_config.dart';
-import '../../domain/entities/player.dart';
-import '../../domain/entities/position.dart';
-import '../../domain/entities/game_result.dart';
-
-/// Data Transfer Object for GameState persistence
-///
-/// Handles serialization of complex nested structures:
-/// - 2D board array
-/// - Enum conversions (Player, GameResult, GameMode, etc.)
-/// - DateTime to ISO8601 strings
-/// - Position lists to JSON-friendly format
-class GameStateModel {
-  final List<List<String>> board;
-  final String currentPlayer;
-  final String result;
-  final String? winner;
-  final List<Map<String, int>>? winningLine;
-  final List<Map<String, int>> moveHistory;
-  final GameConfigModel config;
-  final String startTime;
-  final int elapsedTimeMs;
-
-  const GameStateModel({
-    required this.board,
-    required this.currentPlayer,
-    required this.result,
-    this.winner,
-    this.winningLine,
-    required this.moveHistory,
-    required this.config,
-    required this.startTime,
-    required this.elapsedTimeMs,
-  });
-
-  /// Deserialize from JSON - handles nested structures
-  factory GameStateModel.fromJson(Map<String, dynamic> json) {
-    return GameStateModel(
+  /// Creates a GameState from JSON
+  factory GameState.fromJson(Map<String, dynamic> json) {
+    return GameState(
       board: (json['board'] as List)
-          .map((row) => (row as List).map((cell) => cell as String).toList())
+          .map((row) => (row as List)
+              .map((cell) => _stringToPlayer(cell as String))
+              .toList())
           .toList(),
-      currentPlayer: json['currentPlayer'] as String,
-      result: json['result'] as String,
-      winner: json['winner'] as String?,
+      currentPlayer: _stringToPlayer(json['currentPlayer'] as String),
+      result: _stringToResult(json['result'] as String),
+      winner: json['winner'] != null ? _stringToPlayer(json['winner'] as String) : null,
       winningLine: json['winningLine'] != null
           ? (json['winningLine'] as List)
-              .map((pos) => Map<String, int>.from(pos as Map))
+              .map((pos) => Position(
+                    row: (pos as Map<String, dynamic>)['row'] as int,
+                    col: (pos as Map<String, dynamic>)['col'] as int,
+                  ))
               .toList()
           : null,
       moveHistory: (json['moveHistory'] as List)
-          .map((pos) => Map<String, int>.from(pos as Map))
+          .map((pos) => Position(
+                row: (pos as Map<String, dynamic>)['row'] as int,
+                col: (pos as Map<String, dynamic>)['col'] as int,
+              ))
           .toList(),
-      config: GameConfigModel.fromJson(json['config'] as Map<String, dynamic>),
-      startTime: json['startTime'] as String,
-      elapsedTimeMs: json['elapsedTimeMs'] as int,
+      config: GameConfig.fromJson(json['config'] as Map<String, dynamic>),
+      startTime: DateTime.parse(json['startTime'] as String),
+      elapsedTime: Duration(milliseconds: json['elapsedTimeMs'] as int),
     );
   }
 
-  /// Serialize to JSON
+  /// Converts GameState to JSON
   Map<String, dynamic> toJson() {
     return {
-      'board': board,
-      'currentPlayer': currentPlayer,
-      'result': result,
-      'winner': winner,
-      'winningLine': winningLine,
-      'moveHistory': moveHistory,
+      'board': board
+          .map((row) => row.map((player) => _playerToString(player)).toList())
+          .toList(),
+      'currentPlayer': _playerToString(currentPlayer),
+      'result': _resultToString(result),
+      'winner': winner != null ? _playerToString(winner!) : null,
+      'winningLine': winningLine?.map((pos) => {'row': pos.row, 'col': pos.col}).toList(),
+      'moveHistory': moveHistory.map((pos) => {'row': pos.row, 'col': pos.col}).toList(),
       'config': config.toJson(),
-      'startTime': startTime,
-      'elapsedTimeMs': elapsedTimeMs,
+      'startTime': startTime.toIso8601String(),
+      'elapsedTimeMs': elapsedTime.inMilliseconds,
     };
   }
 
-  /// Convert from domain entity - handles enum and object conversions
-  factory GameStateModel.fromEntity(GameState state) {
-    return GameStateModel(
-      board: state.board
-          .map((row) => row.map((player) => _playerToString(player)).toList())
-          .toList(),
-      currentPlayer: _playerToString(state.currentPlayer),
-      result: _resultToString(state.result),
-      winner: state.winner != null ? _playerToString(state.winner!) : null,
-      winningLine: state.winningLine
-          ?.map((pos) => {'row': pos.row, 'col': pos.col})
-          .toList(),
-      moveHistory:
-          state.moveHistory.map((pos) => {'row': pos.row, 'col': pos.col}).toList(),
-      config: GameConfigModel.fromEntity(state.config),
-      startTime: state.startTime.toIso8601String(),
-      elapsedTimeMs: state.elapsedTime.inMilliseconds,
-    );
-  }
-
-  /// Convert to domain entity
-  GameState toEntity() {
-    return GameState(
-      board: board
-          .map((row) => row.map((cell) => _stringToPlayer(cell)).toList())
-          .toList(),
-      currentPlayer: _stringToPlayer(currentPlayer),
-      result: _stringToResult(result),
-      winner: winner != null ? _stringToPlayer(winner!) : null,
-      winningLine: winningLine
-          ?.map((pos) => Position(row: pos['row']!, col: pos['col']!))
-          .toList(),
-      moveHistory: moveHistory
-          .map((pos) => Position(row: pos['row']!, col: pos['col']!))
-          .toList(),
-      config: config.toEntity(),
-      startTime: DateTime.parse(startTime),
-      elapsedTime: Duration(milliseconds: elapsedTimeMs),
-    );
-  }
-
-  // Helper methods for enum conversions
+  // Helper methods for enum conversion
   static String _playerToString(Player player) {
     switch (player) {
       case Player.x: return 'x';
@@ -356,49 +221,121 @@ class GameStateModel {
       default: return GameResult.ongoing;
     }
   }
+
+  // ❌ NO business logic like this:
+  // bool isValidMove(Position pos) { ... }  // This belongs in GameService
+  // Player? getWinner() { ... }  // This belongs in GameService
+  // Score calculateScore() { ... }  // This belongs in GameService
+
+  @override
+  List<Object?> get props => [
+        board,
+        currentPlayer,
+        result,
+        winner,
+        winningLine,
+        moveHistory,
+        config,
+        startTime,
+        elapsedTime,
+      ];
 }
 ```
 
-**Repository for GameState**:
+### 2. Simplified Repository Pattern
+
+**Purpose**: Repositories use domain models directly via their JSON serialization methods. No separate data transfer objects.
+
+**Key Responsibilities**:
+- Call `model.toJson()` to serialize for persistence
+- Call `Model.fromJson()` to deserialize from storage
+- Data validation during deserialization (handled in model's `fromJson`)
+- Managing persistence sources (SharedPreferences, API, etc.)
+
+**Architecture Flow**:
+```
+External Source (API/DB) ↔ Repository ↔ Model (domain/models)
+                        (uses toJson/fromJson)
+```
+
+#### Example: Score Repository
+
+```dart
+// data/repositories/score_repository.dart
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/models/score.dart';
+
+class ScoreRepository {
+  static const String _scoreKey = 'score';
+
+  /// Load score from SharedPreferences
+  Future<Score> loadScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final wins = prefs.getInt('wins') ?? 0;
+    final losses = prefs.getInt('losses') ?? 0;
+    final draws = prefs.getInt('draws') ?? 0;
+
+    return Score(
+      wins: wins,
+      losses: losses,
+      draws: draws,
+    );
+  }
+
+  /// Save score using model's toJson directly
+  Future<void> saveScore(Score score) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('wins', score.wins);
+    await prefs.setInt('losses', score.losses);
+    await prefs.setInt('draws', score.draws);
+  }
+
+  /// Business methods
+  Future<void> resetScore() async {
+    await saveScore(const Score());
+  }
+
+  Future<void> incrementWins() async {
+    final score = await loadScore();
+    await saveScore(score.copyWith(wins: score.wins + 1));
+  }
+}
+```
+
+#### Example: GameState Repository (Complex with JSON)
 
 ```dart
 // data/repositories/game_state_repository.dart
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/game_state.dart';
-import '../models/game_state_model.dart';
+import '../../domain/models/game_state.dart';
 
 class GameStateRepository {
   static const String _savedGameKey = 'saved_game';
 
-  /// Save game: Entity → Model → JSON → Storage
+  /// Save game using model's toJson directly
   Future<void> saveGame(GameState state) async {
     final prefs = await SharedPreferences.getInstance();
-    final model = GameStateModel.fromEntity(state);
-    final jsonString = jsonEncode(model.toJson());
+    final jsonString = jsonEncode(state.toJson());  // Direct serialization
     await prefs.setString(_savedGameKey, jsonString);
   }
 
-  /// Load game: Storage → JSON → Model → Entity
+  /// Load game using model's fromJson directly
   Future<GameState?> loadGame() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_savedGameKey);
 
-    if (jsonString == null) return null;
+    if (jsonString == null) {
+      return null;
+    }
 
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      final model = GameStateModel.fromJson(json);
-      return model.toEntity();
+      return GameState.fromJson(json);  // Direct deserialization
     } catch (e) {
-      await deleteSavedGame(); // Clean up corrupted data
+      await deleteSavedGame();
       return null;
     }
-  }
-
-  Future<bool> hasSavedGame() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_savedGameKey);
   }
 
   Future<void> deleteSavedGame() async {
@@ -408,205 +345,175 @@ class GameStateRepository {
 }
 ```
 
-**Key Takeaways for Complex Models**:
-1. **Nested objects**: Create separate models (e.g., `GameConfigModel`)
-2. **Enums**: Convert to/from strings for JSON compatibility
-3. **Collections**: Map complex objects (e.g., `List<Position>` → `List<Map<String, int>>`)
-4. **DateTime**: Use ISO8601 strings for serialization
+**Key Takeaways for Simplified Models**:
+1. **Nested objects**: Handle via nested `fromJson`/`toJson` calls (e.g., `GameConfig.fromJson()`)
+2. **Enums**: Convert to/from strings using helper methods in the model
+3. **Collections**: Map complex objects inline in `fromJson`/`toJson`
+4. **DateTime**: Use `toIso8601String()` and `DateTime.parse()` in model serialization
 5. **Error handling**: Try-catch with fallback in repositories
 
-#### Example: User Model (Complex Case with Freezed)
+### 3. Simple Value Object (Enum Models)
 
 ```dart
-// data/models/user_model.dart
-import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/user.dart';
+// domain/models/player.dart
+enum Player {
+  x,
+  o,
+  none;
 
-part 'user_model.freezed.dart';
-part 'user_model.g.dart';
-
-@freezed
-class UserModel with _$UserModel {
-  const factory UserModel({
-    required String id,
-    required String email,
-    required String username,
-    required DateTime createdAt,
-    String? avatarUrl,
-    @Default(false) bool isVerified,
-    @Default([]) List<String> roles,
-  }) = _UserModel;
-
-  // ONLY serialization helpers
-  factory UserModel.fromJson(Map<String, dynamic> json) =>
-      _$UserModelFromJson(json);
-
-  // ❌ NO business logic like:
-  // bool canPerformAction(Action action) { ... }  // Belongs in AuthService
-  // int calculateAge() { ... }  // Belongs in UserService
-  // bool hasPermission(Permission p) { ... }  // Belongs in PermissionService
+  String get symbol {
+    switch (this) {
+      case Player.x: return 'X';
+      case Player.o: return 'O';
+      case Player.none: return '';
+    }
+  }
 }
 
-// Extension for conversions
-extension UserModelX on UserModel {
-  // Simple computed properties - OK
-  String get displayName => username.isEmpty ? email : username;
+// domain/models/game_mode.dart
+enum GameMode {
+  singlePlayer,
+  twoPlayer;
+}
 
-  // Convert to domain entity - OK
-  User toEntity() => User(
-    id: id,
-    email: email,
-    username: username,
-    createdAt: createdAt,
-    avatarUrl: avatarUrl,
-    isVerified: isVerified,
-    roles: roles,
-  );
+// domain/models/difficulty_level.dart
+enum DifficultyLevel {
+  easy,
+  medium,
+  hard;
+}
+
+// domain/models/game_result.dart
+enum GameResult {
+  ongoing,
+  win,
+  loss,
+  draw;
 }
 ```
 
-#### Repository Pattern with Models
+### 4. Simple Value Object (Data Class)
 
 ```dart
-// data/repositories/score_repository.dart
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/score.dart';
-import '../models/score_model.dart';
-
-class ScoreRepository {
-  /// Load score: Storage → Model → Entity
-  Future<Score> loadScore() async {
-    final prefs = await SharedPreferences.getInstance();
-    final wins = prefs.getInt('wins') ?? 0;
-    final losses = prefs.getInt('losses') ?? 0;
-    final draws = prefs.getInt('draws') ?? 0;
-
-    // Create model from raw data
-    final model = ScoreModel(
-      wins: wins,
-      losses: losses,
-      draws: draws,
-    );
-
-    // Convert to domain entity
-    return model.toEntity();
-  }
-
-  /// Save score: Entity → Model → Storage
-  Future<void> saveScore(Score score) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Convert domain entity to data model
-    final model = ScoreModel.fromEntity(score);
-
-    // Persist the model
-    await prefs.setInt('wins', model.wins);
-    await prefs.setInt('losses', model.losses);
-    await prefs.setInt('draws', model.draws);
-  }
-}
-```
-
-**Why Separate Models from Entities?**
-1. **Independence**: API changes don't affect domain logic
-2. **Flexibility**: Different persistence formats (JSON, SQLite, etc.)
-3. **Testability**: Mock data sources easily
-4. **Evolution**: API v1 → v2 without touching domain
-5. **Clean Architecture**: Clear layer boundaries
-
-### 3. Value Object Model
-
-```dart
-// domain/entities/move.dart
-class Move extends Equatable {
-  final Position from;
-  final Position to;
-  final DateTime timestamp;
-  final String? notation;
-
-  const Move({
-    required this.from,
-    required this.to,
-    required this.timestamp,
-    this.notation,
-  });
-
-  // Simple formatting - OK
-  String toNotation() => notation ?? '${from.toNotation()}-${to.toNotation()}';
-
-  // Basic property check - OK
-  bool get isDiagonal => (from.x - to.x).abs() == (from.y - to.y).abs();
-  bool get isHorizontal => from.y == to.y;
-  bool get isVertical => from.x == to.x;
-
-  // ❌ NO business logic like:
-  // bool isValidForPiece(Piece piece) { ... }  // Belongs in GameService
-  // bool isCheck() { ... }  // Belongs in GameService
-  // List<Position> getPath() { ... }  // Belongs in PathService
-
-  @override
-  List<Object?> get props => [from, to, timestamp, notation];
-}
+// domain/models/position.dart
+import 'package:equatable/equatable.dart';
 
 class Position extends Equatable {
-  final int x;
-  final int y;
+  final int row;
+  final int col;
 
-  const Position(this.x, this.y);
+  const Position({
+    required this.row,
+    required this.col,
+  });
 
-  // Simple conversions - OK
-  String toNotation() => '${String.fromCharCode(97 + x)}${8 - y}';
-
-  // Basic calculations - OK
-  Position offset(int dx, int dy) => Position(x + dx, y + dy);
+  // Simple helper methods - OK
+  bool isValid() => row >= 0 && row < 3 && col >= 0 && col < 3;
 
   // ❌ NO business logic like:
-  // bool isValidOnBoard(Board board) { ... }  // Belongs in GameService
-  // bool isThreatened(GameState state) { ... }  // Belongs in GameService
+  // bool isWinningPosition(Board board) { ... }  // Belongs in GameService
+  // List<Position> getAdjacentPositions() { ... }  // Belongs in GameService
 
   @override
-  List<Object> get props => [x, y];
+  List<Object> get props => [row, col];
 }
 ```
 
-### 4. Configuration Model
+### 5. Configuration Model with JSON Serialization
 
 ```dart
-// domain/entities/game_config.dart
-@immutable
-class GameConfig {
-  final BoardSize boardSize;
-  final List<Player> players;
-  final Duration timeLimit;
-  final DifficultyLevel difficulty;
-  final Map<String, dynamic> customRules;
+// domain/models/game_config.dart
+import 'package:equatable/equatable.dart';
+import 'difficulty_level.dart';
+import 'game_mode.dart';
+import 'player.dart';
+
+class GameConfig extends Equatable {
+  final GameMode gameMode;
+  final DifficultyLevel? difficultyLevel;
+  final Player firstPlayer;
+  final bool soundEnabled;
+  final bool vibrationEnabled;
 
   const GameConfig({
-    required this.boardSize,
-    required this.players,
-    required this.timeLimit,
-    required this.difficulty,
-    this.customRules = const {},
+    required this.gameMode,
+    this.difficultyLevel,
+    required this.firstPlayer,
+    this.soundEnabled = true,
+    this.vibrationEnabled = true,
   });
 
-  // Factory constructors for common configurations - OK
-  factory GameConfig.quickGame() => GameConfig(
-    boardSize: BoardSize.standard,
-    players: [Player.human(), Player.ai()],
-    timeLimit: const Duration(minutes: 5),
-    difficulty: DifficultyLevel.medium,
-  );
-
-  // Simple property accessors - OK
-  bool get isSinglePlayer => players.where((p) => p.isHuman).length == 1;
-  bool get hasTimeLimit => timeLimit != Duration.zero;
+  // Simple property accessor - OK
+  bool get isSinglePlayer => gameMode == GameMode.singlePlayer;
 
   // ❌ NO business logic like:
-  // bool isValidConfiguration() { ... }  // Belongs in ConfigService
-  // GameConfig applyHandicap(Player player) { ... }  // Belongs in GameService
-  // int calculateStartingScore() { ... }  // Belongs in ScoringService
+  // bool isValidConfiguration() { ... }  // Belongs in GameService
+  // GameConfig applyDifficulty(DifficultyLevel level) { ... }  // Belongs in GameService
 
-  GameConfig copyWith({...}) => GameConfig(...);
+  GameConfig copyWith({
+    GameMode? gameMode,
+    DifficultyLevel? difficultyLevel,
+    Player? firstPlayer,
+    bool? soundEnabled,
+    bool? vibrationEnabled,
+  }) {
+    return GameConfig(
+      gameMode: gameMode ?? this.gameMode,
+      difficultyLevel: difficultyLevel ?? this.difficultyLevel,
+      firstPlayer: firstPlayer ?? this.firstPlayer,
+      soundEnabled: soundEnabled ?? this.soundEnabled,
+      vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+    );
+  }
+
+  factory GameConfig.fromJson(Map<String, dynamic> json) {
+    return GameConfig(
+      gameMode: _stringToGameMode(json['gameMode'] as String),
+      difficultyLevel: json['difficultyLevel'] != null
+          ? _stringToDifficulty(json['difficultyLevel'] as String)
+          : null,
+      firstPlayer: _stringToPlayer(json['firstPlayer'] as String),
+      soundEnabled: json['soundEnabled'] as bool? ?? true,
+      vibrationEnabled: json['vibrationEnabled'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'gameMode': _gameModeToString(gameMode),
+      'difficultyLevel': difficultyLevel != null ? _difficultyToString(difficultyLevel!) : null,
+      'firstPlayer': _playerToString(firstPlayer),
+      'soundEnabled': soundEnabled,
+      'vibrationEnabled': vibrationEnabled,
+    };
+  }
+
+  // Helper methods for enum conversion (can be extracted to extensions if preferred)
+  static String _gameModeToString(GameMode mode) {
+    switch (mode) {
+      case GameMode.singlePlayer: return 'singlePlayer';
+      case GameMode.twoPlayer: return 'twoPlayer';
+    }
+  }
+
+  static GameMode _stringToGameMode(String value) {
+    switch (value) {
+      case 'singlePlayer': return GameMode.singlePlayer;
+      case 'twoPlayer': return GameMode.twoPlayer;
+      default: return GameMode.singlePlayer;
+    }
+  }
+
+  // Similar helper methods for DifficultyLevel and Player...
+
+  @override
+  List<Object?> get props => [
+        gameMode,
+        difficultyLevel,
+        firstPlayer,
+        soundEnabled,
+        vibrationEnabled,
+      ];
 }
 ```
 

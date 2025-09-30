@@ -1,8 +1,8 @@
-import '../entities/game_config.dart';
-import '../entities/game_result.dart';
-import '../entities/game_state.dart';
-import '../entities/player.dart';
-import '../entities/position.dart';
+import '../models/game_config.dart';
+import '../models/game_result.dart';
+import '../models/game_state.dart';
+import '../models/player.dart';
+import '../models/position.dart';
 
 class GameService {
   /// Creates a new game state with an empty board

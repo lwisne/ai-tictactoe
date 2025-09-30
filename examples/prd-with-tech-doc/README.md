@@ -32,7 +32,7 @@ Claude then:
 5. Added tests and documentation
 
 The technical architecture document in `.claude/` defined strict separation of concerns:
-- **Models**: THIN data structures only (no business logic)
+- **Models**: Data structures with JSON serialization (no business logic)
 - **Services**: Handle ALL business logic
 - **BLoCs**: ONLY UI state management
 - **Pages**: Always StatelessWidget (or StatefulWidget when needed for lifecycle)
@@ -41,15 +41,15 @@ The technical architecture document in `.claude/` defined strict separation of c
 
 ```
 Domain Layer (Business Logic)
-├── Entities (Thin Models - NO business logic)
+├── Models (Data structures with JSON serialization)
 │   ├── Player (enum: X, O, none)
 │   ├── GameMode (enum: single/two player)
 │   ├── DifficultyLevel (enum: easy/medium/hard)
 │   ├── Position (row, col coordinates)
-│   ├── GameConfig (game settings)
-│   ├── GameState (board state, current player, result)
+│   ├── GameConfig (game settings with toJson/fromJson)
+│   ├── GameState (board state with toJson/fromJson)
 │   ├── GameResult (enum: win/loss/draw/ongoing)
-│   └── Score (wins/losses/draws)
+│   └── Score (wins/losses/draws with toJson/fromJson)
 │
 └── Services (ALL business logic lives here)
     ├── GameService
@@ -72,9 +72,9 @@ Domain Layer (Business Logic)
 
 Data Layer (Persistence)
 └── Repositories
-    └── ScoreRepository
-        ├── loadScore() - from SharedPreferences
-        ├── saveScore()
+    └── ScoreRepository & GameStateRepository
+        ├── loadScore/loadGame() - from SharedPreferences
+        ├── saveScore/saveGame() - directly use model.toJson()
         ├── resetScore()
         └── increment methods
 
@@ -112,10 +112,11 @@ Core
    - Data persistence in Repositories
    - UI rendering in Widgets
 
-2. **Thin Models**
-   - Entities contain ONLY data and simple getters
-   - No methods that perform calculations or business logic
-   - Example: `Player.opponent` getter is allowed, but win detection is not
+2. **Simplified Models**
+   - Models contain data structures and JSON serialization
+   - No business logic calculations
+   - Direct serialization without separate entity/model layers
+   - Example: `GameState.toJson()` and `GameState.fromJson()` handle persistence
 
 3. **Service Layer Pattern**
    - ALL game rules in GameService
@@ -124,7 +125,7 @@ Core
 
 4. **Dependency Flow**
    - Presentation → Domain (Services)
-   - Data → Domain (Services via Repositories)
+   - Data → Domain (Models via Repositories)
    - Domain has NO dependencies on outer layers
 
 ### AI Implementation Details
@@ -148,15 +149,15 @@ return availableMoves[random.nextInt(availableMoves.length)];
 - Result: Unbeatable AI
 
 ### Code Statistics
-- **8 Domain Entities**: 5 enums + 3 classes (all thin)
+- **8 Domain Models**: 5 enums + 3 classes with JSON serialization
 - **2 Services**: 400+ lines of business logic
-- **1 Repository**: Data persistence
+- **2 Repositories**: Data persistence (Score & GameState)
 - **2 BLoCs**: UI state management (6 events, 7 states)
 - **3 Pages**: Home, Game, Settings
 - **2 Widgets**: Board components
 - **1 Theme**: Material 3 configuration
 - **1 Router**: Navigation setup
-- **167 Tests**: Comprehensive test coverage across all layers
+- **191 Tests**: Comprehensive test coverage across all layers
   - 27 GameService tests (game logic, win detection, board state)
   - 17 AiService tests (all difficulty levels, minimax algorithm)
   - 17 GameBloc tests (all events and states)
@@ -186,8 +187,8 @@ return availableMoves[random.nextInt(availableMoves.length)];
 
 This app follows Clean Architecture with Service Layer pattern:
 
-- **Domain Layer**: Business entities and services
-  - Entities: Thin models with no business logic
+- **Domain Layer**: Business models and services
+  - Models: Data structures with JSON serialization (no business logic)
   - Services: ALL game logic (win detection, move validation, AI)
 - **Data Layer**: Repositories for persistence
 - **Presentation Layer**: BLoC state management for UI
@@ -209,17 +210,17 @@ This app follows Clean Architecture with Service Layer pattern:
 ```
 lib/
 ├── domain/
-│   ├── entities/          # Thin data models
-│   └── services/          # Business logic
+│   ├── models/           # Data structures with JSON serialization
+│   └── services/         # Business logic
 ├── data/
-│   └── repositories/      # Data persistence
+│   └── repositories/     # Data persistence
 ├── presentation/
-│   ├── blocs/            # State management
-│   ├── pages/            # Screen widgets
-│   └── widgets/          # Reusable components
+│   ├── blocs/           # State management
+│   ├── pages/           # Screen widgets
+│   └── widgets/         # Reusable components
 ├── core/
-│   └── theme/            # Material 3 theme
-└── routes/               # Navigation setup
+│   └── theme/           # Material 3 theme
+└── routes/              # Navigation setup
 ```
 
 ## Getting Started
@@ -316,7 +317,7 @@ flutter test test/domain/services/game_service_test.dart
 - ✅ AI algorithms verified (easy, medium, hard)
 - ✅ Win/loss/draw scenarios validated
 - ✅ Edge cases covered
-- ✅ **106 tests passing** (service + bloc + repository + model + widget tests)
+- ✅ **191 tests passing** (service + bloc + repository + model + widget + page tests)
 
 ### Coverage by Layer
 
@@ -332,7 +333,7 @@ Based on the testing requirements document (`.claude/testing-requirements.md`):
 | **Pages** | 70% | ~80% | ✅ Exceeds target |
 | **Overall** | 90% | 86.0% | ⚠️ Approaching target |
 
-**Note on Coverage**: The overall coverage is 86.0%, approaching the 90% target. All layers meet or exceed their individual coverage targets. The testing includes 167 comprehensive tests covering services, BLoCs, repositories, models, widgets, and pages.
+**Note on Coverage**: The overall coverage is 86.0%, approaching the 90% target. All layers meet or exceed their individual coverage targets. The testing includes 191 comprehensive tests covering services, BLoCs, repositories, models, widgets, and pages.
 
 ## Development
 

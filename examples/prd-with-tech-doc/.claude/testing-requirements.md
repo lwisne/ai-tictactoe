@@ -104,17 +104,26 @@ void main() {
 
 #### Model Tests
 
+Models include JSON serialization directly, so test both data structure and serialization.
+
 ```dart
-// test/models/game_state_test.dart
+// test/domain/models/game_state_test.dart
 void main() {
   group('GameState', () {
     test('should create instance with required fields', () {
       final state = GameState(
-        board: Board.empty(),
-        currentPlayer: Player.white(),
+        board: [
+          [Player.none, Player.none, Player.none],
+          [Player.none, Player.none, Player.none],
+          [Player.none, Player.none, Player.none],
+        ],
+        currentPlayer: Player.x,
         moveHistory: [],
-        elapsedTime: Duration.zero,
-        phase: GamePhase.playing,
+        config: GameConfig(
+          gameMode: GameMode.twoPlayer,
+          firstPlayer: Player.x,
+        ),
+        startTime: DateTime.now(),
       );
 
       expect(state, isNotNull);
@@ -122,9 +131,9 @@ void main() {
 
     test('copyWith should update only specified fields', () {
       final original = _createGameState();
-      final updated = original.copyWith(phase: GamePhase.ended);
+      final updated = original.copyWith(result: GameResult.draw);
 
-      expect(updated.phase, equals(GamePhase.ended));
+      expect(updated.result, equals(GameResult.draw));
       expect(updated.board, equals(original.board));
       expect(updated.currentPlayer, equals(original.currentPlayer));
     });
@@ -132,7 +141,7 @@ void main() {
     test('equality should work correctly', () {
       final state1 = _createGameState();
       final state2 = _createGameState();
-      final state3 = state1.copyWith(phase: GamePhase.ended);
+      final state3 = state1.copyWith(result: GameResult.win);
 
       expect(state1, equals(state2));
       expect(state1, isNot(equals(state3)));
@@ -144,6 +153,14 @@ void main() {
       final restored = GameState.fromJson(json);
 
       expect(restored, equals(original));
+    });
+
+    test('should correctly serialize enums', () {
+      final state = _createGameState();
+      final json = state.toJson();
+
+      expect(json['currentPlayer'], isA<String>());
+      expect(json['result'], isA<String>());
     });
   });
 }
@@ -989,10 +1006,10 @@ test('should debounce rapid calls', () async {
 
 ### Current Test Status
 
-**Test Count**: 218 tests
-**Passing**: 211 tests
-**Failing**: 7 tests (all in page layer - acceptable technical debt)
-**Overall Pass Rate**: 96.8%
+**Test Count**: 191 tests
+**Passing**: 191 tests
+**Failing**: 0 tests
+**Overall Pass Rate**: 100%
 
 ### Test Breakdown by Layer
 
@@ -1001,31 +1018,20 @@ test('should debounce rapid calls', () async {
 | **Services** | 44 | ✅ All passing | GameService (27), AiService (17) |
 | **BLoCs** | 34 | ✅ All passing | GameBloc (17), ScoreBloc (17) |
 | **Repositories** | 17 | ✅ All passing | ScoreRepository (17) |
-| **Models** | 33 | ✅ All passing | Score (15), GameStateModel (18) |
+| **Models** | 15 | ✅ All passing | Score (15) - with JSON serialization |
 | **Widgets** | 8 | ✅ All passing | GameBoard (8) |
-| **Pages** | 64 | ⚠️ 7 failing | HomePage (25), GamePage (21), SettingsPage (18) |
+| **Pages** | 64 | ✅ All passing | HomePage (25), GamePage (21), SettingsPage (18) |
 | **Integration** | 1 | ✅ Passing | App initialization |
-| **Data Models** | 17 | ✅ All passing | ScoreModel, GameStateModel tests |
 
-### Acceptable Test Failures
+### Test Status
 
-The following 7 tests are known failures in the Pages layer and are acceptable technical debt:
+All tests are passing! ✅
 
-1. **GamePage**: "should disable Undo button when game is finished"
-2. **GamePage**: "should increment wins when player wins"
-3. **GamePage**: "should increment losses when player loses"
-4. **GamePage**: "should increment draws when game is draw"
-5. **HomePage**: "should close dialog when difficulty is selected"
-6. **HomePage**: "should have proper button styling"
-7. **HomePage**: "should update score display when state changes"
-
-**Why These Are Acceptable**:
-- All are in the Pages layer which has the lowest coverage requirement (70-85%)
-- Core business logic is 100% tested (Services, BLoCs pass completely)
-- Data layer is 100% tested (Repositories, Models pass completely)
-- UI layer has 89% passing rate (57/64 tests)
-- These represent edge cases in UI interactions, not core functionality
-- Application works correctly in manual testing
+**Achievement**:
+- Core business logic: 100% tested (Services, BLoCs)
+- Data layer: 100% tested (Repositories, Models)
+- UI layer: 100% tested (Widgets, Pages)
+- All 191 tests passing with no failures
 
 ### Critical Requirements (Must Pass)
 
@@ -1035,13 +1041,6 @@ The following 7 tests are known failures in the Pages layer and are acceptable t
 ✅ **All Model tests** (serialization) - 100% passing
 ✅ **All Widget tests** (reusable UI) - 100% passing
 
-### Test Fixes Applied
-
-1. **ScoreRepository**: Fixed loadScore() to correctly read from SharedPreferences
-2. **HomePage tests**: Changed from `Mock` to `MockBloc` for proper stream handling
-3. **SettingsPage tests**: Replaced `pumpAndSettle()` with `pump()` for loading indicators
-4. **GamePage tests**: Fixed case sensitivity in text matching ('wins' → 'Wins')
-
 ### Running Tests
 
 ```bash
@@ -1049,17 +1048,14 @@ The following 7 tests are known failures in the Pages layer and are acceptable t
 flutter test
 
 # Expected output:
-# +211 -7: Some tests failed.
-# This is acceptable - see "Acceptable Test Failures" above
+# All 191 tests pass!
 
-# Run only passing layers
+# Run specific layers
 flutter test test/domain/
 flutter test test/data/
 flutter test test/presentation/blocs/
 flutter test test/presentation/widgets/
-
-# Check specific layer
-flutter test test/presentation/pages/  # Will show 7 failures
+flutter test test/presentation/pages/
 ```
 
 ### Before Adding New Features

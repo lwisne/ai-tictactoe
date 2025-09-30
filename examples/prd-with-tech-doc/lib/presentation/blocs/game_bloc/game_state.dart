@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/game_state.dart' as domain;
+import '../../../domain/models/game_state.dart' as domain;
 
 abstract class GameBlocState extends Equatable {
   const GameBlocState();

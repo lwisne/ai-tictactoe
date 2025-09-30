@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../domain/entities/difficulty_level.dart';
-import '../../domain/entities/game_config.dart';
-import '../../domain/entities/game_mode.dart';
-import '../../domain/entities/player.dart';
+import '../../domain/models/difficulty_level.dart';
+import '../../domain/models/game_config.dart';
+import '../../domain/models/game_mode.dart';
+import '../../domain/models/player.dart';
 import '../../routes/app_router.dart';
 import '../blocs/score_bloc/score_bloc.dart';
 import '../blocs/score_bloc/score_state.dart';

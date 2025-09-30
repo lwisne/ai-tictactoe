@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/score_repository.dart';
-import '../../../domain/entities/score.dart';
+import '../../../domain/models/score.dart';
 import 'score_event.dart';
 import 'score_state.dart';
 

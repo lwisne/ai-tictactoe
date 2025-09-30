@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tic_tac_toe/domain/entities/game_config.dart';
-import 'package:tic_tac_toe/domain/entities/game_mode.dart';
-import 'package:tic_tac_toe/domain/entities/game_state.dart' as domain;
-import 'package:tic_tac_toe/domain/entities/player.dart';
-import 'package:tic_tac_toe/domain/entities/position.dart';
+import 'package:tic_tac_toe/domain/models/game_config.dart';
+import 'package:tic_tac_toe/domain/models/game_mode.dart';
+import 'package:tic_tac_toe/domain/models/game_state.dart' as domain;
+import 'package:tic_tac_toe/domain/models/player.dart';
+import 'package:tic_tac_toe/domain/models/position.dart';
 import 'package:tic_tac_toe/presentation/widgets/board_cell.dart';
 import 'package:tic_tac_toe/presentation/widgets/game_board.dart';
 

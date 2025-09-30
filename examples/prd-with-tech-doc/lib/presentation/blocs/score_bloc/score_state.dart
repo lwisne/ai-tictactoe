@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/score.dart';
+import '../../../domain/models/score.dart';
 
 abstract class ScoreState extends Equatable {
   const ScoreState();

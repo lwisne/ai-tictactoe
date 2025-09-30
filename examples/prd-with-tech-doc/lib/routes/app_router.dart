@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../domain/entities/game_config.dart';
+import '../domain/models/game_config.dart';
 import '../presentation/pages/game_page.dart';
 import '../presentation/pages/home_page.dart';
 import '../presentation/pages/settings_page.dart';

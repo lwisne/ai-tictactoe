@@ -1,7 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:tic_tac_toe/domain/entities/score.dart';
+import 'package:tic_tac_toe/domain/models/score.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_bloc.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_event.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_state.dart';

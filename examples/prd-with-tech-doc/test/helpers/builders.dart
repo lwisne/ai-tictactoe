@@ -1,11 +1,11 @@
-import 'package:tic_tac_toe/domain/entities/difficulty_level.dart';
-import 'package:tic_tac_toe/domain/entities/game_config.dart';
-import 'package:tic_tac_toe/domain/entities/game_mode.dart';
-import 'package:tic_tac_toe/domain/entities/game_result.dart';
-import 'package:tic_tac_toe/domain/entities/game_state.dart';
-import 'package:tic_tac_toe/domain/entities/player.dart';
-import 'package:tic_tac_toe/domain/entities/position.dart';
-import 'package:tic_tac_toe/domain/entities/score.dart';
+import 'package:tic_tac_toe/domain/models/difficulty_level.dart';
+import 'package:tic_tac_toe/domain/models/game_config.dart';
+import 'package:tic_tac_toe/domain/models/game_mode.dart';
+import 'package:tic_tac_toe/domain/models/game_result.dart';
+import 'package:tic_tac_toe/domain/models/game_state.dart';
+import 'package:tic_tac_toe/domain/models/player.dart';
+import 'package:tic_tac_toe/domain/models/position.dart';
+import 'package:tic_tac_toe/domain/models/score.dart';
 
 /// Test data builders to keep tests readable and maintainable
 class TestDataBuilder {

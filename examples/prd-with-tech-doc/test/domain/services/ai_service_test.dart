@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tic_tac_toe/domain/entities/difficulty_level.dart';
-import 'package:tic_tac_toe/domain/entities/player.dart';
-import 'package:tic_tac_toe/domain/entities/position.dart';
+import 'package:tic_tac_toe/domain/models/difficulty_level.dart';
+import 'package:tic_tac_toe/domain/models/player.dart';
+import 'package:tic_tac_toe/domain/models/position.dart';
 import 'package:tic_tac_toe/domain/services/ai_service.dart';
 import 'package:tic_tac_toe/domain/services/game_service.dart';
 

@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/game_config.dart';
-import '../../../domain/entities/position.dart';
+import '../../../domain/models/game_config.dart';
+import '../../../domain/models/position.dart';
 
 abstract class GameEvent extends Equatable {
   const GameEvent();

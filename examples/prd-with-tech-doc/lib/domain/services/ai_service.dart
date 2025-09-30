@@ -1,7 +1,7 @@
 import 'dart:math';
-import '../entities/difficulty_level.dart';
-import '../entities/player.dart';
-import '../entities/position.dart';
+import '../models/difficulty_level.dart';
+import '../models/player.dart';
+import '../models/position.dart';
 import 'game_service.dart';
 
 class AiService {
