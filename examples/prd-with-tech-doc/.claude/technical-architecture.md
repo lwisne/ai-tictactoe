@@ -354,6 +354,8 @@ class GameStateRepository {
 
 ### 3. Simple Value Object (Enum Models)
 
+**IMPORTANT**: Keep enums pure without display logic. Use presentation layer extensions/helpers for display concerns.
+
 ```dart
 // domain/models/player.dart
 enum Player {
@@ -361,13 +363,8 @@ enum Player {
   o,
   none;
 
-  String get symbol {
-    switch (this) {
-      case Player.x: return 'X';
-      case Player.o: return 'O';
-      case Player.none: return '';
-    }
-  }
+  // ✅ NO display logic in domain models
+  // ❌ AVOID: String get symbol { ... }  // This is presentation logic
 }
 
 // domain/models/game_mode.dart
@@ -390,6 +387,50 @@ enum GameResult {
   loss,
   draw;
 }
+```
+
+**For Display Logic**: Create presentation layer helpers with static methods and optional extensions:
+
+```dart
+// presentation/extensions/player_extensions.dart
+import '../../domain/models/player.dart';
+
+/// Presentation layer helper for Player display
+/// IMPROVED APPROACH: Static helper class ensures test compatibility
+class PlayerDisplay {
+  /// Returns the display symbol for the player
+  static String symbol(Player player) {
+    switch (player) {
+      case Player.x:
+        return 'X';
+      case Player.o:
+        return 'O';
+      case Player.none:
+        return '';
+    }
+  }
+}
+
+/// Optional convenience extension (delegates to static helper)
+extension PlayerExtensions on Player {
+  String get symbol => PlayerDisplay.symbol(this);
+}
+```
+
+**Why This Approach is Better**:
+1. ✅ **Separation of Concerns**: Display logic stays in presentation layer, not domain
+2. ✅ **Test Reliability**: Static methods work in all test contexts (Dart extensions can have visibility issues in test compilation units)
+3. ✅ **Flexibility**: Can use static method `PlayerDisplay.symbol(player)` or extension `player.symbol`
+4. ✅ **Domain Purity**: Domain models remain free of UI/presentation concerns
+
+**Usage in Code**:
+```dart
+// In presentation layer (pages, widgets):
+Text(PlayerDisplay.symbol(player))  // ✅ Recommended: Always reliable
+Text(player.symbol)                 // ✅ Also works: Convenience wrapper
+
+// In tests:
+expect(PlayerDisplay.symbol(Player.x), equals('X'))  // ✅ Always works
 ```
 
 ### 4. Simple Value Object (Data Class)
@@ -1461,10 +1502,18 @@ Future<void> init() async {
 
 - Keep models as simple data containers
 - Only include basic helper methods (copyWith, toJson, fromJson)
-- Use simple computed properties (getters for derived values)
+- Use simple computed properties (getters for derived values like `bool get isEmpty`)
 - Implement equality (Equatable or freezed)
-- Keep serialization logic in models
-- Use extensions for simple formatting helpers
+- Keep serialization logic in models (toJson/fromJson)
+- **AVOID display logic in models** - use presentation layer helpers instead
+
+### ✅ Presentation Layer DO's (Display Logic):
+
+- Create static helper classes for display concerns (e.g., `PlayerDisplay`, `GameResultDisplay`)
+- Use extensions as optional convenience wrappers that delegate to static helpers
+- Always prefer static methods in tests for reliability
+- Keep all display formatting (symbols, text, colors) in presentation layer
+- Example: `PlayerDisplay.symbol(player)` instead of `player.symbol` in domain
 
 ### ✅ Service Layer DO's:
 
@@ -2157,10 +2206,18 @@ Future<void> init() async {
 
 - Keep models as simple data containers
 - Only include basic helper methods (copyWith, toJson, fromJson)
-- Use simple computed properties (getters for derived values)
+- Use simple computed properties (getters for derived values like `bool get isEmpty`)
 - Implement equality (Equatable or freezed)
-- Keep serialization logic in models
-- Use extensions for simple formatting helpers
+- Keep serialization logic in models (toJson/fromJson)
+- **AVOID display logic in models** - use presentation layer helpers instead
+
+### ✅ Presentation Layer DO's (Display Logic):
+
+- Create static helper classes for display concerns (e.g., `PlayerDisplay`, `GameResultDisplay`)
+- Use extensions as optional convenience wrappers that delegate to static helpers
+- Always prefer static methods in tests for reliability
+- Keep all display formatting (symbols, text, colors) in presentation layer
+- Example: `PlayerDisplay.symbol(player)` instead of `player.symbol` in domain
 
 ### ✅ Service Layer DO's:
 
