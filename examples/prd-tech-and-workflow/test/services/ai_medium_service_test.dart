@@ -39,7 +39,7 @@ void main() {
 
       test('takes winning move when available with high probability', () {
         // Board state: O has two in a row (positions 0, 1)
-        // X _ _
+        // O O _
         // X O _
         // _ O _
         final board = List<Player?>.filled(9, null);

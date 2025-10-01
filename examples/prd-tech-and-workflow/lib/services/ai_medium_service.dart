@@ -15,10 +15,10 @@ class AiMediumService {
       : _random = random ?? Random();
 
   /// Gets the AI's move for the current game state
-  /// Strategy:
+  /// Strategy (cumulative probabilities):
   /// 1. 70% chance: Try to win if possible
-  /// 2. 70% chance: Block opponent's winning move
-  /// 3. 30% chance: Make strategic move (center, corners)
+  /// 2. 21% chance: Block opponent's winning move
+  /// 3. 9% chance: Make strategic move (center, corners)
   /// 4. Otherwise: Random valid move
   BoardPosition getMove(GameState state) {
     final emptyPositions = _gameService.getEmptyPositions(state);
@@ -30,31 +30,34 @@ class AiMediumService {
     final aiPlayer = state.currentPlayer;
     final opponent = aiPlayer.opponent;
 
-    // 70% of the time, try to win immediately
-    if (_random.nextDouble() < 0.7) {
+    // Use a single random value to determine which action to attempt
+    final rand = _random.nextDouble();
+
+    // 70% chance: Try to win if possible
+    if (rand < 0.7) {
       final winMove = _findWinningMove(state.board, aiPlayer);
       if (winMove != null) {
         return winMove;
       }
     }
 
-    // 70% of the time, block opponent's winning move
-    if (_random.nextDouble() < 0.7) {
+    // Next 21% (0.7 to 0.91): Block opponent's winning move
+    if (rand < 0.91) {
       final blockMove = _findWinningMove(state.board, opponent);
       if (blockMove != null) {
         return blockMove;
       }
     }
 
-    // 30% of the time, make a strategic move
-    if (_random.nextDouble() < 0.3) {
+    // Next 9% (0.91 to 1.0): Make a strategic move
+    if (rand < 1.0) {
       final strategicMove = _findStrategicMove(state.board, emptyPositions);
       if (strategicMove != null) {
         return strategicMove;
       }
     }
 
-    // Otherwise, random move
+    // Fallback: random move (should rarely reach here)
     return emptyPositions[_random.nextInt(emptyPositions.length)];
   }
 
