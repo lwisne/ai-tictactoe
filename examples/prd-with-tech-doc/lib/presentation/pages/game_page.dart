@@ -119,10 +119,10 @@ class GamePage extends StatelessWidget {
       statusText = 'AI is thinking...';
       statusColor = colorScheme.secondary;
     } else if (state is GameFinished) {
-      statusText = gameState.result.displayText(gameState.winner ?? gameState.currentPlayer);
+      statusText = GameResultDisplay.displayText(gameState.result, gameState.winner ?? gameState.currentPlayer);
       statusColor = colorScheme.primary;
     } else {
-      statusText = "Current: ${gameState.currentPlayer.symbol}";
+      statusText = "Current: ${PlayerDisplay.symbol(gameState.currentPlayer)}";
       statusColor = colorScheme.onSurface;
     }
 
@@ -205,7 +205,7 @@ class GamePage extends StatelessWidget {
           barrierDismissible: false,
           builder: (dialogContext) => AlertDialog(
             title: Text(
-              gameState.result.displayText(gameState.winner ?? gameState.currentPlayer),
+              GameResultDisplay.displayText(gameState.result, gameState.winner ?? gameState.currentPlayer),
               textAlign: TextAlign.center,
             ),
             content: Column(

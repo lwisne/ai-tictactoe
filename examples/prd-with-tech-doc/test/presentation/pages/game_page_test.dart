@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+// Import extensions FIRST before any files that might use them
+import 'package:tic_tac_toe/presentation/extensions/game_result_extensions.dart';
+import 'package:tic_tac_toe/presentation/extensions/player_extensions.dart';
 import 'package:tic_tac_toe/domain/models/game_config.dart';
 import 'package:tic_tac_toe/domain/models/game_mode.dart';
 import 'package:tic_tac_toe/domain/models/game_result.dart';
@@ -14,8 +17,6 @@ import 'package:tic_tac_toe/presentation/blocs/game_bloc/game_state.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_bloc.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_event.dart';
 import 'package:tic_tac_toe/presentation/blocs/score_bloc/score_state.dart';
-import 'package:tic_tac_toe/presentation/extensions/game_result_extensions.dart';
-import 'package:tic_tac_toe/presentation/extensions/player_extensions.dart';
 import 'package:tic_tac_toe/presentation/pages/game_page.dart';
 import 'package:tic_tac_toe/presentation/widgets/game_board.dart';
 

@@ -36,7 +36,7 @@ class BoardCell extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            player.symbol,
+            PlayerDisplay.symbol(player),
             style: TextStyle(
               fontSize: 48,
               fontWeight: FontWeight.bold,
