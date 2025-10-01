@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../models/board_position.dart';
 import '../models/game_state.dart';
 import '../models/player.dart';
@@ -96,8 +98,8 @@ class AiHardService {
           final score = _minimax(board, depth + 1, false, aiPlayer, alpha, beta);
           board[i] = null;
 
-          maxScore = score > maxScore ? score : maxScore;
-          alpha = alpha > score ? alpha : score;
+          maxScore = math.max(score, maxScore);
+          alpha = math.max(alpha, score);
 
           // Alpha-beta pruning
           if (beta <= alpha) {
@@ -117,8 +119,8 @@ class AiHardService {
           final score = _minimax(board, depth + 1, true, aiPlayer, alpha, beta);
           board[i] = null;
 
-          minScore = score < minScore ? score : minScore;
-          beta = beta < score ? beta : score;
+          minScore = math.min(score, minScore);
+          beta = math.min(beta, score);
 
           // Alpha-beta pruning
           if (beta <= alpha) {
