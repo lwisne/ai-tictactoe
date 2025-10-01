@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../blocs/game_cubit.dart';
+import '../cubits/score_cubit.dart';
 import '../cubits/settings_cubit.dart';
 import '../models/board_position.dart';
 import '../models/game_state.dart';
@@ -218,6 +219,13 @@ class _GameViewState extends State<_GameView> {
   void _showGameOverDialog(BuildContext context, GameState state) {
     final gameService = GameService();
     final winner = gameService.getWinner(state);
+
+    // Record the score
+    if (winner != null) {
+      context.read<ScoreCubit>().recordWin(winner);
+    } else {
+      context.read<ScoreCubit>().recordDraw();
+    }
 
     // Small delay so the last move is visible
     Future.delayed(const Duration(milliseconds: 300), () {

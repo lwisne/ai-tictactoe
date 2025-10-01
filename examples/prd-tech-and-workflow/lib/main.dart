@@ -1,31 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'cubits/score_cubit.dart';
 import 'cubits/settings_cubit.dart';
 import 'models/settings.dart' as app_settings;
 import 'pages/home_page.dart';
+import 'services/score_service.dart';
 import 'services/settings_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final settingsService = SettingsService(prefs);
+  final scoreService = ScoreService(prefs);
 
-  runApp(TicTacToeApp(settingsService: settingsService));
+  runApp(TicTacToeApp(
+    settingsService: settingsService,
+    scoreService: scoreService,
+  ));
 }
 
 class TicTacToeApp extends StatelessWidget {
   final SettingsService settingsService;
+  final ScoreService scoreService;
 
   const TicTacToeApp({
     super.key,
     required this.settingsService,
+    required this.scoreService,
   });
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => SettingsCubit(settingsService),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => SettingsCubit(settingsService)),
+        BlocProvider(create: (_) => ScoreCubit(scoreService)),
+      ],
       child: BlocBuilder<SettingsCubit, app_settings.Settings>(
         builder: (context, settings) {
           return MaterialApp(
