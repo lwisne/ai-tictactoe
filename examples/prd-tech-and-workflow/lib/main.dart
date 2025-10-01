@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/game_page.dart';
+import 'pages/home_page.dart';
 
 void main() {
   runApp(const TicTacToeApp());
@@ -28,7 +28,7 @@ class TicTacToeApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      home: const GamePage(),
+      home: const HomePage(),
     );
   }
 }
