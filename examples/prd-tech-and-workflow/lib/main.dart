@@ -14,10 +14,9 @@ void main() async {
   final settingsService = SettingsService(prefs);
   final scoreService = ScoreService(prefs);
 
-  runApp(TicTacToeApp(
-    settingsService: settingsService,
-    scoreService: scoreService,
-  ));
+  runApp(
+    TicTacToeApp(settingsService: settingsService, scoreService: scoreService),
+  );
 }
 
 class TicTacToeApp extends StatelessWidget {
