@@ -18,8 +18,13 @@ void main() {
     });
 
     test('initial state loads from service', () async {
-      // Save some scores first
-      await service.saveScore(const Score(xWins: 3, oWins: 2, draws: 1));
+      // Record some scores first
+      await service.recordWin(Player.x);
+      await service.recordWin(Player.x);
+      await service.recordWin(Player.x);
+      await service.recordWin(Player.o);
+      await service.recordWin(Player.o);
+      await service.recordDraw();
 
       final cubit = ScoreCubit(service);
 
@@ -56,7 +61,7 @@ void main() {
       build: () => ScoreCubit(service),
       seed: () => const Score(xWins: 5, oWins: 3, draws: 2),
       act: (cubit) => cubit.resetScores(),
-      expect: () => [Score.initial()],
+      expect: () => [Score.empty()],
     );
 
     blocTest<ScoreCubit, Score>(
@@ -92,8 +97,16 @@ void main() {
     );
 
     test('loadScores emits loaded score', () async {
-      // Save some scores
-      await service.saveScore(const Score(xWins: 10, oWins: 5, draws: 3));
+      // Record some scores
+      for (int i = 0; i < 10; i++) {
+        await service.recordWin(Player.x);
+      }
+      for (int i = 0; i < 5; i++) {
+        await service.recordWin(Player.o);
+      }
+      for (int i = 0; i < 3; i++) {
+        await service.recordDraw();
+      }
 
       final cubit = ScoreCubit(service);
 

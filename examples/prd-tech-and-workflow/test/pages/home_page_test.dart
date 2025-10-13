@@ -1,87 +1,134 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tic_tac_toe/cubits/score_cubit.dart';
+import 'package:tic_tac_toe/cubits/settings_cubit.dart';
 import 'package:tic_tac_toe/pages/game_page.dart';
 import 'package:tic_tac_toe/pages/home_page.dart';
+import 'package:tic_tac_toe/pages/settings_page.dart';
+import 'package:tic_tac_toe/services/score_service.dart';
+import 'package:tic_tac_toe/services/settings_service.dart';
 
 void main() {
   group('HomePage', () {
-    testWidgets('renders title and buttons', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
+    late SharedPreferences prefs;
+    late SettingsService settingsService;
+    late ScoreService scoreService;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      settingsService = SettingsService(prefs);
+      scoreService = ScoreService(prefs);
+    });
+
+    Widget createHomePage() {
+      return MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => SettingsCubit(settingsService)),
+          BlocProvider(create: (_) => ScoreCubit(scoreService)),
+        ],
+        child: const MaterialApp(
           home: HomePage(),
         ),
       );
+    }
+
+    testWidgets('renders title and game mode options', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
       // Verify title
-      expect(find.text('Tic-Tac-Toe'), findsNWidgets(2)); // AppBar + body title
+      expect(find.text('Tic-Tac-Toe'), findsOneWidget); // AppBar
+      expect(find.text('Choose Game Mode'), findsOneWidget);
 
-      // Verify buttons
+      // Verify game mode options
       expect(find.text('2 Player'), findsOneWidget);
-      expect(find.text('Single Player'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
+      expect(find.text('vs AI'), findsOneWidget);
 
       // Verify icons
       expect(find.byIcon(Icons.people), findsOneWidget);
-      expect(find.byIcon(Icons.person), findsOneWidget);
+      expect(find.byIcon(Icons.computer), findsOneWidget);
       expect(find.byIcon(Icons.settings), findsOneWidget);
     });
 
+    testWidgets('displays score board', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
+
+      // Verify score display elements
+      expect(find.text('X Wins'), findsOneWidget);
+      expect(find.text('Draws'), findsOneWidget);
+      expect(find.text('O Wins'), findsOneWidget);
+    });
+
     testWidgets('2 Player button navigates to game page', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
       // Tap 2 Player button
       await tester.tap(find.text('2 Player'));
       await tester.pumpAndSettle();
 
-      // Verify navigation to GamePage
+      // Verify navigation to GamePage with twoPlayer mode
       expect(find.byType(GamePage), findsOneWidget);
     });
 
-    testWidgets('Single Player button shows coming soon message', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
+    testWidgets('vs AI button navigates to game page', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
-      // Tap Single Player button
-      await tester.tap(find.text('Single Player'));
-      await tester.pump();
+      // Tap vs AI button
+      await tester.tap(find.text('vs AI'));
+      await tester.pumpAndSettle();
 
-      // Verify snackbar appears
-      expect(find.text('Single player mode coming soon!'), findsOneWidget);
+      // Verify navigation to GamePage with vsAi mode
+      expect(find.byType(GamePage), findsOneWidget);
     });
 
-    testWidgets('Settings button shows coming soon message', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
+    testWidgets('Settings button navigates to settings page', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
       // Tap Settings button
-      await tester.tap(find.text('Settings'));
-      await tester.pump();
+      await tester.tap(find.byIcon(Icons.settings));
+      await tester.pumpAndSettle();
 
-      // Verify snackbar appears
-      expect(find.text('Settings coming soon!'), findsOneWidget);
+      // Verify navigation to SettingsPage
+      expect(find.byType(SettingsPage), findsOneWidget);
     });
 
     testWidgets('respects theme from MaterialApp', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              brightness: Brightness.light,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => SettingsCubit(settingsService)),
+            BlocProvider(create: (_) => ScoreCubit(scoreService)),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
             ),
-            useMaterial3: true,
+            home: const HomePage(),
           ),
-          home: const HomePage(),
         ),
       );
 
@@ -89,30 +136,11 @@ void main() {
       expect(find.byType(HomePage), findsOneWidget);
     });
 
-    testWidgets('buttons have correct styling', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
-
-      // Verify all three button types exist
-      expect(find.text('2 Player'), findsOneWidget);
-      expect(find.text('Single Player'), findsOneWidget);
-      expect(find.text('Settings'), findsOneWidget);
-
-      // Verify icons are present
-      expect(find.byIcon(Icons.people), findsOneWidget);
-      expect(find.byIcon(Icons.person), findsOneWidget);
-      expect(find.byIcon(Icons.settings), findsOneWidget);
-    });
-
     testWidgets('layout is responsive with constraints', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
       // Verify ConstrainedBox exists with max width 400
       final constrainedBoxes = tester.widgetList<ConstrainedBox>(
@@ -125,11 +153,10 @@ void main() {
     });
 
     testWidgets('navigating back from game returns to home', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
-        ),
-      );
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(createHomePage());
 
       // Navigate to game
       await tester.tap(find.text('2 Player'));

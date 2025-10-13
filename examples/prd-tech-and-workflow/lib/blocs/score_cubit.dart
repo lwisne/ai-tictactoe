@@ -7,7 +7,7 @@ import '../services/score_service.dart';
 class ScoreCubit extends Cubit<Score> {
   final ScoreService _scoreService;
 
-  ScoreCubit(this._scoreService) : super(Score.initial()) {
+  ScoreCubit(this._scoreService) : super(Score.empty()) {
     loadScores();
   }
 
@@ -19,19 +19,19 @@ class ScoreCubit extends Cubit<Score> {
 
   /// Records a win for a player
   Future<void> recordWin(Player winner) async {
-    final updatedScore = await _scoreService.recordWin(state, winner);
-    emit(updatedScore);
+    await _scoreService.recordWin(winner);
+    loadScores();
   }
 
   /// Records a draw
   Future<void> recordDraw() async {
-    final updatedScore = await _scoreService.recordDraw(state);
-    emit(updatedScore);
+    await _scoreService.recordDraw();
+    loadScores();
   }
 
   /// Resets all scores to zero
   Future<void> resetScores() async {
-    final score = await _scoreService.resetScores();
-    emit(score);
+    await _scoreService.resetScores();
+    loadScores();
   }
 }

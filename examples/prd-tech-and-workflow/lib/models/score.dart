@@ -1,5 +1,7 @@
-/// Model representing game scores
-class Score {
+import 'package:equatable/equatable.dart';
+
+/// Score tracking for wins, losses, and draws
+class Score extends Equatable {
   final int xWins;
   final int oWins;
   final int draws;
@@ -10,15 +12,26 @@ class Score {
     required this.draws,
   });
 
-  /// Initial score with all counters at zero
-  factory Score.initial() {
+  factory Score.empty() {
     return const Score(xWins: 0, oWins: 0, draws: 0);
   }
 
-  /// Total games played
-  int get totalGames => xWins + oWins + draws;
+  factory Score.fromJson(Map<String, dynamic> json) {
+    return Score(
+      xWins: json['xWins'] as int? ?? 0,
+      oWins: json['oWins'] as int? ?? 0,
+      draws: json['draws'] as int? ?? 0,
+    );
+  }
 
-  /// Copy with updated values
+  Map<String, dynamic> toJson() {
+    return {
+      'xWins': xWins,
+      'oWins': oWins,
+      'draws': draws,
+    };
+  }
+
   Score copyWith({
     int? xWins,
     int? oWins,
@@ -31,33 +44,8 @@ class Score {
     );
   }
 
-  /// JSON serialization
-  Map<String, dynamic> toJson() {
-    return {
-      'xWins': xWins,
-      'oWins': oWins,
-      'draws': draws,
-    };
-  }
-
-  /// JSON deserialization
-  factory Score.fromJson(Map<String, dynamic> json) {
-    return Score(
-      xWins: json['xWins'] as int,
-      oWins: json['oWins'] as int,
-      draws: json['draws'] as int,
-    );
-  }
+  int get totalGames => xWins + oWins + draws;
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Score &&
-        other.xWins == xWins &&
-        other.oWins == oWins &&
-        other.draws == draws;
-  }
-
-  @override
-  int get hashCode => Object.hash(xWins, oWins, draws);
+  List<Object?> get props => [xWins, oWins, draws];
 }

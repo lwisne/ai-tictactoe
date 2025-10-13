@@ -7,7 +7,7 @@ import '../models/player.dart';
 /// Follows architecture pattern: Pure widget with no business logic
 class GameBoard extends StatelessWidget {
   final List<Player?> board;
-  final Function(BoardPosition) onCellTapped;
+  final Function(BoardPosition)? onCellTapped;
 
   const GameBoard({
     super.key,
@@ -30,7 +30,9 @@ class GameBoard extends StatelessWidget {
         itemBuilder: (context, index) {
           return _GameCell(
             player: board[index],
-            onTap: () => onCellTapped(BoardPosition(index)),
+            onTap: onCellTapped != null
+                ? () => onCellTapped!(BoardPosition(index))
+                : null,
           );
         },
       ),
@@ -41,7 +43,7 @@ class GameBoard extends StatelessWidget {
 /// Individual cell in the game board
 class _GameCell extends StatelessWidget {
   final Player? player;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _GameCell({
     required this.player,

@@ -3,56 +3,52 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/player.dart';
 import '../models/score.dart';
 
-/// Service for managing persistent score tracking
+/// Service for persisting game scores
 class ScoreService {
-  static const String _scoreKey = 'tic_tac_toe_scores';
+  static const String _scoreKey = 'game_score';
   final SharedPreferences _prefs;
 
   ScoreService(this._prefs);
 
-  /// Loads scores from persistent storage
+  /// Loads the current score from persistent storage
   Score loadScore() {
-    final jsonString = _prefs.getString(_scoreKey);
-    if (jsonString == null) {
-      return Score.initial();
+    final json = _prefs.getString(_scoreKey);
+    if (json == null) {
+      return Score.empty();
     }
 
     try {
-      final json = jsonDecode(jsonString) as Map<String, dynamic>;
-      return Score.fromJson(json);
+      final map = jsonDecode(json) as Map<String, dynamic>;
+      return Score.fromJson(map);
     } catch (e) {
-      // If deserialization fails, return initial score
-      return Score.initial();
+      return Score.empty();
     }
   }
 
-  /// Saves scores to persistent storage
-  Future<void> saveScore(Score score) async {
-    final jsonString = jsonEncode(score.toJson());
-    await _prefs.setString(_scoreKey, jsonString);
-  }
-
-  /// Records a win for a player
-  Future<Score> recordWin(Score currentScore, Player winner) async {
-    final updatedScore = winner == Player.x
+  /// Records a win for the specified player
+  Future<void> recordWin(Player player) async {
+    final currentScore = loadScore();
+    final newScore = player == Player.x
         ? currentScore.copyWith(xWins: currentScore.xWins + 1)
         : currentScore.copyWith(oWins: currentScore.oWins + 1);
 
-    await saveScore(updatedScore);
-    return updatedScore;
+    await _saveScore(newScore);
   }
 
   /// Records a draw
-  Future<Score> recordDraw(Score currentScore) async {
-    final updatedScore = currentScore.copyWith(draws: currentScore.draws + 1);
-    await saveScore(updatedScore);
-    return updatedScore;
+  Future<void> recordDraw() async {
+    final currentScore = loadScore();
+    final newScore = currentScore.copyWith(draws: currentScore.draws + 1);
+    await _saveScore(newScore);
   }
 
   /// Resets all scores to zero
-  Future<Score> resetScores() async {
-    final score = Score.initial();
-    await saveScore(score);
-    return score;
+  Future<void> resetScores() async {
+    await _saveScore(Score.empty());
+  }
+
+  Future<void> _saveScore(Score score) async {
+    final json = jsonEncode(score.toJson());
+    await _prefs.setString(_scoreKey, json);
   }
 }
