@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tictactoe_app/core/theme/app_theme.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/presentation/extensions/game_mode_ui_extensions.dart';
 import 'package:tictactoe_app/presentation/widgets/mode_selection_button.dart';
 
 void main() {

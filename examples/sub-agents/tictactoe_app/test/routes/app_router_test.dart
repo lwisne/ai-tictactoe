@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:tictactoe_app/core/di/injection.dart';
 import 'package:tictactoe_app/presentation/pages/ai_difficulty_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_details_page.dart';
@@ -10,12 +11,17 @@ import 'package:tictactoe_app/presentation/pages/settings_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
 void main() {
-  setUpAll(() {
-    // Initialize dependency injection for tests
-    configureDependencies();
-  });
-
   group('AppRouter', () {
+    setUp(() {
+      // Initialize dependency injection for each test to prevent state pollution
+      configureDependencies();
+    });
+
+    tearDown(() {
+      // Reset GetIt container after each test to prevent registration conflicts
+      GetIt.instance.reset();
+    });
+
     testWidgets('navigates to home page at initial location', (tester) async {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: AppRouter.router),

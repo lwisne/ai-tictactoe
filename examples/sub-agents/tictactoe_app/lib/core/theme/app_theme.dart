@@ -25,11 +25,17 @@ class AppTheme {
     return const ColorScheme.light(
       primary: _primaryBlue,
       onPrimary: Colors.white,
-      primaryContainer: Color(0x1F1E88E5), // _primaryBlue with 12% opacity
+      // primaryContainer uses pre-calculated hex value (0x1F = 12% opacity)
+      // instead of _primaryBlue.withOpacity(0.12) to maintain const ColorScheme.
+      // Material 3 standard for container colors is 12% opacity.
+      primaryContainer: Color(0x1F1E88E5), // _primaryBlue at 12% opacity
       onPrimaryContainer: Color(0xFF001D36),
       secondary: _secondaryAmber,
       onSecondary: Colors.black,
-      secondaryContainer: Color(0x1FFFB300), // _secondaryAmber with 12% opacity
+      // secondaryContainer uses pre-calculated hex value (0x1F = 12% opacity)
+      // instead of _secondaryAmber.withOpacity(0.12) to maintain const ColorScheme.
+      // Material 3 standard for container colors is 12% opacity.
+      secondaryContainer: Color(0x1FFFB300), // _secondaryAmber at 12% opacity
       onSecondaryContainer: Color(0xFF2A1800),
       surface: _surfaceLightBackground,
       onSurface: _textPrimaryLight,

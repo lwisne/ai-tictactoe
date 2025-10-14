@@ -31,6 +31,10 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
+      // Note: The cascade operator (..initializeLastPlayedMode()) creates an
+      // immediate side effect on cubit creation. This is intentional to match
+      // the PRD requirement that the home page should "highlight last played
+      // mode" immediately on load, providing instant visual feedback to users.
       create: (context) => getIt<GameModeCubit>()..initializeLastPlayedMode(),
       child: const HomePageContent(),
     );

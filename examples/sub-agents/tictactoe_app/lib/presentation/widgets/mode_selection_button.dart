@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/game_mode.dart';
+import '../extensions/game_mode_ui_extensions.dart';
 
 /// A reusable Material 3 button widget for game mode selection
 ///
@@ -35,9 +36,6 @@ class ModeSelectionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    // Get icon based on mode
-    final IconData icon = _getIconForMode(mode);
 
     return Semantics(
       button: true,
@@ -76,7 +74,7 @@ class ModeSelectionButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                icon,
+                mode.icon,
                 size: 32,
                 color: isLastPlayed
                     ? colorScheme.primary
@@ -150,15 +148,5 @@ class ModeSelectionButton extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Returns the appropriate icon for the given game mode
-  IconData _getIconForMode(GameMode mode) {
-    switch (mode) {
-      case GameMode.vsAi:
-        return Icons.smart_toy;
-      case GameMode.twoPlayer:
-        return Icons.people;
-    }
   }
 }

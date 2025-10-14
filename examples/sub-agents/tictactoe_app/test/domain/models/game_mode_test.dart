@@ -3,36 +3,6 @@ import 'package:tictactoe_app/domain/models/game_mode.dart';
 
 void main() {
   group('GameMode', () {
-    group('displayName', () {
-      test('should return "Play vs AI" for vsAi mode', () {
-        expect(GameMode.vsAi.displayName, 'Play vs AI');
-      });
-
-      test('should return "Two Player" for twoPlayer mode', () {
-        expect(GameMode.twoPlayer.displayName, 'Two Player');
-      });
-    });
-
-    group('subtitle', () {
-      test('should return "Challenge the AI" for vsAi mode', () {
-        expect(GameMode.vsAi.subtitle, 'Challenge the AI');
-      });
-
-      test('should return "Pass & Play on this device" for twoPlayer mode', () {
-        expect(GameMode.twoPlayer.subtitle, 'Pass & Play on this device');
-      });
-    });
-
-    group('iconName', () {
-      test('should return "smart_toy" for vsAi mode', () {
-        expect(GameMode.vsAi.iconName, 'smart_toy');
-      });
-
-      test('should return "people" for twoPlayer mode', () {
-        expect(GameMode.twoPlayer.iconName, 'people');
-      });
-    });
-
     group('fromString', () {
       test('should parse "vsAi" string to vsAi mode', () {
         final result = GameMode.fromString('vsAi');
