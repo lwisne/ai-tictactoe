@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:tictactoe_app/domain/models/game_mode.dart';
 import 'package:tictactoe_app/presentation/pages/home_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_page.dart';
 import 'package:tictactoe_app/presentation/pages/settings_page.dart';
@@ -8,6 +10,8 @@ import 'package:tictactoe_app/presentation/pages/history_page.dart';
 import 'package:tictactoe_app/presentation/pages/ai_difficulty_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_details_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
+
+import '../../helpers/test_helpers.dart';
 
 /// Integration tests for LWI-151: Navigation patterns and back button behavior
 ///
@@ -22,6 +26,11 @@ import 'package:tictactoe_app/routes/app_router.dart';
 ///
 /// Note: Each test creates its own router to avoid state pollution issues
 void main() {
+  setUpAll(() {
+    // Register fallback values for mocktail
+    registerFallbackValue(GameMode.vsAi);
+  });
+
   // Helper to create a fresh router for each test
   GoRouter createTestRouter() {
     return GoRouter(
@@ -69,9 +78,16 @@ void main() {
 
   group('Back Button Behavior - LWI-151', () {
     // Reset router to home before each test to avoid state pollution
-    setUp(() {
+    setUp(() async {
+      // Set up DI container with mocked dependencies
+      await setupTestDI();
       // Navigate to home to ensure clean state for each test
       AppRouter.router.go('/');
+    });
+
+    tearDown(() async {
+      // Clean up DI container
+      await teardownTestDI();
     });
 
     group('Home Page', () {

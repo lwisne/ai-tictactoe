@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/navigation/navigation_behavior.dart';
+import 'package:tictactoe_app/domain/models/game_mode.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
+import '../../helpers/test_helpers.dart';
+
 void main() {
+  setUpAll(() {
+    // Register fallback values for mocktail
+    registerFallbackValue(GameMode.vsAi);
+  });
+
   group('NavigationBehavior', () {
+    setUp(() async {
+      // Set up DI container with mocked dependencies
+      await setupTestDI();
+    });
+
+    tearDown(() async {
+      // Clean up DI container
+      await teardownTestDI();
+    });
     testWidgets('goBack pops navigation stack when canPop is true', (
       tester,
     ) async {
