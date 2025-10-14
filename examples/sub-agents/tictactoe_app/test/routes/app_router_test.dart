@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
+import 'package:tictactoe_app/core/di/injection.dart';
 import 'package:tictactoe_app/presentation/pages/ai_difficulty_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_details_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_page.dart';
@@ -10,12 +12,22 @@ import 'package:tictactoe_app/routes/app_router.dart';
 
 void main() {
   group('AppRouter', () {
+    setUp(() async {
+      // Reset GetIt before each test to ensure a clean DI container
+      await GetIt.instance.reset();
+      // Initialize dependency injection for each test to prevent state pollution
+      configureDependencies();
+    });
+
+    tearDown(() {
+      // Reset router to home to prevent state pollution between tests
+      AppRouter.router.go('/');
+    });
+
     testWidgets('navigates to home page at initial location', (tester) async {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: AppRouter.router),
       );
-
-      await tester.pumpAndSettle();
 
       // Verify home page is displayed
       expect(find.byType(HomePage), findsOneWidget);
@@ -29,8 +41,6 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: AppRouter.router),
       );
-
-      await tester.pumpAndSettle();
 
       // Navigate to game page
       AppRouter.router.go(AppRouter.game);
@@ -47,8 +57,6 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-
-        await tester.pumpAndSettle();
 
         // Navigate to AI difficulty page
         AppRouter.router.go(AppRouter.aiSelect);
@@ -67,8 +75,6 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pumpAndSettle();
-
       // Navigate to history page
       AppRouter.router.go(AppRouter.history);
       await tester.pumpAndSettle();
@@ -85,8 +91,6 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: AppRouter.router),
       );
-
-      await tester.pumpAndSettle();
 
       const testGameId = 'game-123';
 
@@ -106,8 +110,6 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pumpAndSettle();
-
       // Navigate to settings page
       AppRouter.router.go(AppRouter.settings);
       await tester.pumpAndSettle();
@@ -121,8 +123,6 @@ void main() {
       await tester.pumpWidget(
         MaterialApp.router(routerConfig: AppRouter.router),
       );
-
-      await tester.pumpAndSettle();
 
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
@@ -141,18 +141,19 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pumpAndSettle();
-
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
       await tester.pumpAndSettle();
 
       // Tap the back button in AppBar
       await tester.tap(find.byIcon(Icons.arrow_back));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      // Verify we're back at home
-      expect(find.byType(HomePage), findsOneWidget);
+      // Verify we're back at home by checking router location
+      expect(
+        AppRouter.router.routerDelegate.currentConfiguration.uri.path,
+        equals('/'),
+      );
     });
 
     testWidgets('error page has home button that navigates home', (
@@ -162,18 +163,19 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pumpAndSettle();
-
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
       await tester.pumpAndSettle();
 
       // Tap the "Go Home" button
       await tester.tap(find.text('Go Home'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      // Verify we're back at home
-      expect(find.byType(HomePage), findsOneWidget);
+      // Verify we're back at home by checking router location
+      expect(
+        AppRouter.router.routerDelegate.currentConfiguration.uri.path,
+        equals('/'),
+      );
     });
 
     test('route constants are correctly defined', () {

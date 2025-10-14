@@ -11,6 +11,12 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:tictactoe_app/data/repositories/game_mode_repository.dart'
+    as _i840;
+import 'package:tictactoe_app/data/repositories/theme_repository.dart' as _i947;
+import 'package:tictactoe_app/presentation/cubits/game_mode_cubit.dart'
+    as _i293;
+import 'package:tictactoe_app/presentation/cubits/theme_cubit.dart' as _i489;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -18,7 +24,17 @@ extension GetItInjectableX on _i174.GetIt {
     String? environment,
     _i526.EnvironmentFilter? environmentFilter,
   }) {
-    _i526.GetItHelper(this, environment, environmentFilter);
+    final gh = _i526.GetItHelper(this, environment, environmentFilter);
+    gh.lazySingleton<_i947.ThemeRepository>(() => _i947.ThemeRepository());
+    gh.lazySingleton<_i840.GameModeRepository>(
+      () => _i840.GameModeRepository(),
+    );
+    gh.factory<_i489.ThemeCubit>(
+      () => _i489.ThemeCubit(gh<_i947.ThemeRepository>()),
+    );
+    gh.factory<_i293.GameModeCubit>(
+      () => _i293.GameModeCubit(gh<_i840.GameModeRepository>()),
+    );
     return this;
   }
 }

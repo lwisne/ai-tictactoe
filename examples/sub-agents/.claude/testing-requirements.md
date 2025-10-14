@@ -299,7 +299,6 @@ void main() {
 
       // Act
       await tester.pumpWidget(createTestPage());
-      await tester.pump();
 
       // Assert - verify the bloc was created and initialized
       final gameViewFinder = find.byType(GameView);

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// Game History page - placeholder
-/// Will be implemented with actual game history list in future tasks
+/// Game History page with standard back button behavior
+///
+/// As specified in LWI-151, history should have a back button that returns
+/// to the previous screen without confirmation.
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
 
@@ -10,10 +13,8 @@ class HistoryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Game History'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // Standard back button - automatically provided by Flutter
+        // Uses go_router's navigation when pressed
       ),
       body: const Center(
         child: Column(
