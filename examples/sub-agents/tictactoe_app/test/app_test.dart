@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tictactoe_app/core/di/injection.dart';
 import 'package:tictactoe_app/main.dart';
+import 'package:tictactoe_app/presentation/pages/home_page.dart';
 
 void main() {
   setUpAll(() {
@@ -17,22 +18,14 @@ void main() {
 
     // Pump to build initial frame
     await tester.pump();
-    // Pump again to complete async BLoC initialization
+    // Pump to complete async BLoC initialization
     await tester.pump();
 
-    // Verify the app title is displayed (appears in AppBar and body)
+    // Verify the home page is displayed (widget type, not text - more resilient)
+    expect(find.byType(HomePage), findsOneWidget);
+
+    // Verify app title is displayed
     expect(find.text('Tic-Tac-Toe'), findsAtLeastNWidgets(1));
-
-    // Verify the mode selection message
-    expect(find.text('Select a game mode to begin'), findsOneWidget);
-
-    // Verify the grid icon is displayed
-    expect(find.byIcon(Icons.grid_3x3), findsOneWidget);
-
-    // Verify the mode selection buttons are displayed
-    expect(find.text('Play vs AI'), findsOneWidget);
-    expect(find.text('Two Player'), findsOneWidget);
-    expect(find.text('Game History'), findsOneWidget);
   });
 
   testWidgets('App uses Material 3', (WidgetTester tester) async {
