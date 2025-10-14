@@ -12,7 +12,9 @@ import 'package:tictactoe_app/routes/app_router.dart';
 
 void main() {
   group('AppRouter', () {
-    setUp(() {
+    setUp(() async {
+      // Reset GetIt before each test to ensure a clean DI container
+      await GetIt.instance.reset();
       // Initialize dependency injection for each test to prevent state pollution
       configureDependencies();
     });
@@ -20,8 +22,6 @@ void main() {
     tearDown(() {
       // Reset router to home to prevent state pollution between tests
       AppRouter.router.go('/');
-      // Reset GetIt container after each test to prevent registration conflicts
-      GetIt.instance.reset();
     });
 
     testWidgets('navigates to home page at initial location', (tester) async {

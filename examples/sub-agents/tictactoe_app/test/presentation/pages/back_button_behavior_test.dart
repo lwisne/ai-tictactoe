@@ -24,67 +24,22 @@ import '../../helpers/test_helpers.dart';
 /// - AI difficulty: Back returns to previous screen (no confirmation)
 /// - Android system back button respects same behavior
 ///
-/// Note: Each test creates its own router to avoid state pollution issues
+/// Note: Uses AppRouter.router singleton with proper cleanup in tearDown
 void main() {
   setUpAll(() {
     // Register fallback values for mocktail
     registerFallbackValue(GameMode.vsAi);
   });
 
-  // Helper to create a fresh router for each test
-  GoRouter createTestRouter() {
-    return GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(
-          path: '/',
-          name: 'home',
-          builder: (context, state) => const HomePage(),
-        ),
-        GoRoute(
-          path: '/game',
-          name: 'game',
-          builder: (context, state) => const GamePage(),
-        ),
-        GoRoute(
-          path: '/ai-select',
-          name: 'ai-select',
-          builder: (context, state) => const AiDifficultyPage(),
-        ),
-        GoRoute(
-          path: '/history',
-          name: 'history',
-          builder: (context, state) => const HistoryPage(),
-        ),
-        GoRoute(
-          path: '/history/:gameId',
-          name: 'game-details',
-          builder: (context, state) {
-            final gameId = state.pathParameters['gameId'];
-            if (gameId == null || gameId.isEmpty) {
-              return const HistoryPage();
-            }
-            return GameDetailsPage(gameId: gameId);
-          },
-        ),
-        GoRoute(
-          path: '/settings',
-          name: 'settings',
-          builder: (context, state) => const SettingsPage(),
-        ),
-      ],
-    );
-  }
-
   group('Back Button Behavior - LWI-151', () {
     setUp(() async {
+      // Reset router to home to ensure clean state before each test
+      AppRouter.router.go('/');
       // Set up DI container with mocked dependencies
       await setupTestDI();
     });
 
     tearDown(() async {
-      // Reset router to home to prevent state pollution between tests
-      AppRouter.router.go('/');
       // Clean up DI container
       await teardownTestDI();
     });
