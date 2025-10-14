@@ -403,8 +403,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        // Manual pump for deterministic test initialization
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // Start at home
         expect(find.byType(HomePage), findsOneWidget);
@@ -426,8 +425,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        // Manual pump for deterministic test initialization
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // Start at home
         expect(find.byType(HomePage), findsOneWidget);
@@ -452,8 +450,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        // Manual pump for deterministic test initialization
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         // Navigate to game
         AppRouter.router.push('/game');

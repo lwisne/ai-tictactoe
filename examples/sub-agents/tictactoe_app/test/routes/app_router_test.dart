@@ -29,9 +29,6 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Second pump for BLoC initialization
-
       // Verify home page is displayed
       expect(find.byType(HomePage), findsOneWidget);
       // "Tic-Tac-Toe" appears in both AppBar and body
@@ -45,13 +42,9 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Complete initial async operations
-
       // Navigate to game page
       AppRouter.router.go(AppRouter.game);
-      await tester.pump();
-      await tester.pump(); // Complete navigation
+      await tester.pumpAndSettle();
 
       // Verify game page is displayed
       expect(find.byType(GamePage), findsOneWidget);
@@ -65,13 +58,9 @@ void main() {
           MaterialApp.router(routerConfig: AppRouter.router),
         );
 
-        await tester.pump();
-        await tester.pump(); // Complete initial async operations
-
         // Navigate to AI difficulty page
         AppRouter.router.go(AppRouter.aiSelect);
-        await tester.pump();
-        await tester.pump(); // Complete navigation
+        await tester.pumpAndSettle();
 
         // Verify AI difficulty page is displayed
         expect(find.byType(AiDifficultyPage), findsOneWidget);
@@ -86,13 +75,9 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Complete initial async operations
-
       // Navigate to history page
       AppRouter.router.go(AppRouter.history);
-      await tester.pump();
-      await tester.pump(); // Complete navigation
+      await tester.pumpAndSettle();
 
       // Verify history page is displayed
       expect(find.byType(HistoryPage), findsOneWidget);
@@ -107,15 +92,11 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Complete initial async operations
-
       const testGameId = 'game-123';
 
       // Navigate to game details page with parameter
       AppRouter.router.go('/history/$testGameId');
-      await tester.pump();
-      await tester.pump(); // Complete navigation
+      await tester.pumpAndSettle();
 
       // Verify game details page is displayed with correct ID
       expect(find.byType(GameDetailsPage), findsOneWidget);
@@ -129,13 +110,9 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Complete initial async operations
-
       // Navigate to settings page
       AppRouter.router.go(AppRouter.settings);
-      await tester.pump();
-      await tester.pump(); // Complete navigation
+      await tester.pumpAndSettle();
 
       // Verify settings page is displayed
       expect(find.byType(SettingsPage), findsOneWidget);
@@ -147,13 +124,9 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
-
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
+      await tester.pumpAndSettle();
 
       // Verify error page is displayed
       expect(find.text('404'), findsOneWidget);
@@ -168,18 +141,13 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
-
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
+      await tester.pumpAndSettle();
 
       // Tap the back button in AppBar
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pump();
-      await tester.pump(); // Second pump for async operations
 
       // Verify we're back at home by checking router location
       expect(
@@ -195,18 +163,13 @@ void main() {
         MaterialApp.router(routerConfig: AppRouter.router),
       );
 
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
-
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
-      await tester.pump();
-      await tester.pump(); // Second pump for async operations
+      await tester.pumpAndSettle();
 
       // Tap the "Go Home" button
       await tester.tap(find.text('Go Home'));
       await tester.pump();
-      await tester.pump(); // Second pump for async operations
 
       // Verify we're back at home by checking router location
       expect(

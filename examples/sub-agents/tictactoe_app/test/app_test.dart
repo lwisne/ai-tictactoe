@@ -16,9 +16,6 @@ void main() {
     // Build the app
     await tester.pumpWidget(const TicTacToeApp());
 
-    // Manual frame pumping for deterministic testing (avoids pumpAndSettle timeout)
-    await tester.pump();
-
     // Verify the home page is displayed (widget type, not text - more resilient)
     expect(find.byType(HomePage), findsOneWidget);
 
@@ -28,7 +25,6 @@ void main() {
 
   testWidgets('App uses Material 3', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -38,7 +34,6 @@ void main() {
 
   testWidgets('App has dark theme configured', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -49,7 +44,6 @@ void main() {
 
   testWidgets('App has correct title', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -58,7 +52,6 @@ void main() {
 
   testWidgets('App has router configuration', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -68,7 +61,6 @@ void main() {
 
   testWidgets('App has debug banner disabled', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
