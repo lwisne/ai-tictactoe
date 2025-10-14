@@ -248,21 +248,20 @@ void main() {
       // Set a small screen size
       tester.view.physicalSize = const Size(400, 600);
       tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
       // The page should still render without overflow
       expect(tester.takeException(), isNull);
-
-      // Clean up
-      addTearDown(() => tester.view.resetPhysicalSize());
     });
 
     testWidgets('should display properly on large screens', (tester) async {
       // Set a large screen size
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
@@ -272,9 +271,6 @@ void main() {
       expect(find.text('Play vs AI'), findsOneWidget);
       expect(find.text('Two Player'), findsOneWidget);
       expect(find.text('Game History'), findsOneWidget);
-
-      // Clean up
-      addTearDown(() => tester.view.resetPhysicalSize());
     });
 
     testWidgets('should display mode icons correctly', (tester) async {
