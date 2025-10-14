@@ -117,6 +117,39 @@ Run in parallel after tests pass. Each reviewer can execute concurrently.
    - Any architectural or UX decisions made
    - Link to Linear task
 
+### Post-PR Steps
+
+1. **Monitor and respond to PR comments:**
+   ```bash
+   gh pr view <pr-number> --comments
+   ```
+   - Check for comments from reviewers (human and automated like Copilot)
+   - Respond to all comments within 24 hours
+   - For code suggestions:
+     - If valid: acknowledge and create follow-up commits or issues
+     - If unclear: ask for clarification
+     - If disagree: provide technical justification
+
+2. **Address PR feedback:**
+   - **For minor fixes** (typos, documentation, small refactors):
+     - Make changes directly in the PR branch
+     - Commit with clear message referencing the comment
+     - Push to update the PR
+
+   - **For major changes** (logic changes, new features):
+     - Discuss with reviewer first
+     - May need to re-run code-reviewer or other agents
+     - Ensure all tests still pass after changes
+
+3. **Update PR after addressing feedback:**
+   ```bash
+   git add .
+   git commit -m "Address PR feedback: <brief description>"
+   git push origin lwisne/LWI-2-my-task
+   ```
+   - Reply to comments indicating changes made
+   - Request re-review if significant changes
+
 ## Common Issues
 
 ### Merge Conflicts
