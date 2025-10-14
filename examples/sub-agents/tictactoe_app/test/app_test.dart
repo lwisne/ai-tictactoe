@@ -9,7 +9,7 @@ void main() {
     configureDependencies();
   });
 
-  testWidgets('App initializes and shows placeholder home page', (
+  testWidgets('App initializes and shows home page', (
     WidgetTester tester,
   ) async {
     // Build the app
@@ -19,11 +19,17 @@ void main() {
     // Verify the app title is displayed (appears in AppBar and body)
     expect(find.text('Tic-Tac-Toe'), findsNWidgets(2));
 
-    // Verify the placeholder success message
-    expect(find.text('Project initialized successfully!'), findsOneWidget);
+    // Verify the mode selection message
+    expect(find.text('Select a game mode to begin'), findsOneWidget);
 
     // Verify the grid icon is displayed
     expect(find.byIcon(Icons.grid_3x3), findsOneWidget);
+
+    // Verify the placeholder buttons are displayed
+    expect(find.text('Single Player'), findsOneWidget);
+    expect(find.text('Two Player'), findsOneWidget);
+    expect(find.text('Game History'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
   });
 
   testWidgets('App uses Material 3', (WidgetTester tester) async {
