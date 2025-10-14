@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/navigation/navigation_behavior.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/presentation/pages/home_page.dart';
 import 'package:tictactoe_app/presentation/pages/settings_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
@@ -45,8 +46,8 @@ void main() {
       NavigationBehavior.goBack(context);
       await tester.pumpAndSettle();
 
-      // Verify we're back at home
-      expect(find.text('Select a game mode to begin'), findsOneWidget);
+      // Verify we're back at home by widget type
+      expect(find.byType(HomePage), findsOneWidget);
     });
 
     testWidgets('goBack does nothing when canPop is false', (tester) async {
@@ -58,15 +59,15 @@ void main() {
       // We're on home page (canPop is false with go_router at root)
       final context = tester.element(find.byType(Scaffold).first);
 
-      // Verify we're at home before attempting to go back
-      expect(find.text('Select a game mode to begin'), findsOneWidget);
+      // Verify we're at home before attempting to go back by widget type
+      expect(find.byType(HomePage), findsOneWidget);
 
       // Try to go back - should stay on home (no-op when canPop is false)
       NavigationBehavior.goBack(context);
       await tester.pumpAndSettle();
 
       // Verify still on home - goBack() correctly did nothing
-      expect(find.text('Select a game mode to begin'), findsOneWidget);
+      expect(find.byType(HomePage), findsOneWidget);
     });
 
     testWidgets('goHome navigates to home screen', (tester) async {
@@ -87,8 +88,8 @@ void main() {
       NavigationBehavior.goHome(context);
       await tester.pumpAndSettle();
 
-      // Verify we're at home
-      expect(find.text('Select a game mode to begin'), findsOneWidget);
+      // Verify we're at home by widget type
+      expect(find.byType(HomePage), findsOneWidget);
     });
 
     testWidgets('canNavigateBack returns true when stack has routes', (

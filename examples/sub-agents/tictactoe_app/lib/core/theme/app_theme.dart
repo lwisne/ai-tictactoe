@@ -22,58 +22,54 @@ class AppTheme {
 
   // Light Color Scheme
   static ColorScheme get _lightColorScheme {
-    return const ColorScheme.light(
+    return ColorScheme.light(
       primary: _primaryBlue,
       onPrimary: Colors.white,
-      // primaryContainer uses pre-calculated hex value (0x1F = 12% opacity)
-      // instead of _primaryBlue.withOpacity(0.12) to maintain const ColorScheme.
-      // Material 3 standard for container colors is 12% opacity.
-      primaryContainer: Color(0x1F1E88E5), // _primaryBlue at 12% opacity
-      onPrimaryContainer: Color(0xFF001D36),
+      // Material 3 standard for container colors is 12% opacity
+      primaryContainer: _primaryBlue.withOpacity(0.12),
+      onPrimaryContainer: const Color(0xFF001D36),
       secondary: _secondaryAmber,
       onSecondary: Colors.black,
-      // secondaryContainer uses pre-calculated hex value (0x1F = 12% opacity)
-      // instead of _secondaryAmber.withOpacity(0.12) to maintain const ColorScheme.
-      // Material 3 standard for container colors is 12% opacity.
-      secondaryContainer: Color(0x1FFFB300), // _secondaryAmber at 12% opacity
-      onSecondaryContainer: Color(0xFF2A1800),
+      // Material 3 standard for container colors is 12% opacity
+      secondaryContainer: _secondaryAmber.withOpacity(0.12),
+      onSecondaryContainer: const Color(0xFF2A1800),
       surface: _surfaceLightBackground,
       onSurface: _textPrimaryLight,
-      error: Color(0xFFB3261E),
+      error: const Color(0xFFB3261E),
       onError: Colors.white,
-      errorContainer: Color(0xFFF9DEDC),
-      onErrorContainer: Color(0xFF410E0B),
-      outline: Color(0xFF79747E),
-      outlineVariant: Color(0xFFCAC4D0),
+      errorContainer: const Color(0xFFF9DEDC),
+      onErrorContainer: const Color(0xFF410E0B),
+      outline: const Color(0xFF79747E),
+      outlineVariant: const Color(0xFFCAC4D0),
       shadow: Colors.black,
-      inverseSurface: Color(0xFF313033),
-      onInverseSurface: Color(0xFFF4EFF4),
-      inversePrimary: Color(0xFF90CAF9),
+      inverseSurface: const Color(0xFF313033),
+      onInverseSurface: const Color(0xFFF4EFF4),
+      inversePrimary: const Color(0xFF90CAF9),
     );
   }
 
   // Dark Color Scheme
   static ColorScheme get _darkColorScheme {
-    return const ColorScheme.dark(
-      primary: Color(0xFF90CAF9), // Lighter blue for dark mode
-      onPrimary: Color(0xFF003258),
-      primaryContainer: Color(0xFF004A77),
-      onPrimaryContainer: Color(0xFFCAE6FF),
-      secondary: Color(0xFFFFD54F), // Lighter amber for dark mode
-      onSecondary: Color(0xFF3E2D00),
+    return ColorScheme.dark(
+      primary: const Color(0xFF90CAF9), // Lighter blue for dark mode
+      onPrimary: const Color(0xFF003258),
+      primaryContainer: const Color(0xFF004A77),
+      onPrimaryContainer: const Color(0xFFCAE6FF),
+      secondary: const Color(0xFFFFD54F), // Lighter amber for dark mode
+      onSecondary: const Color(0xFF3E2D00),
       secondaryContainer: _secondaryAmber,
-      onSecondaryContainer: Color(0xFFFFECC2),
+      onSecondaryContainer: const Color(0xFFFFECC2),
       surface: _surfaceDarkBackground,
-      onSurface: Color(0xFFE6E1E5),
-      error: Color(0xFFF2B8B5),
-      onError: Color(0xFF601410),
-      errorContainer: Color(0xFF8C1D18),
-      onErrorContainer: Color(0xFFF9DEDC),
-      outline: Color(0xFF938F99),
-      outlineVariant: Color(0xFF49454F),
+      onSurface: const Color(0xFFE6E1E5),
+      error: const Color(0xFFF2B8B5),
+      onError: const Color(0xFF601410),
+      errorContainer: const Color(0xFF8C1D18),
+      onErrorContainer: const Color(0xFFF9DEDC),
+      outline: const Color(0xFF938F99),
+      outlineVariant: const Color(0xFF49454F),
       shadow: Colors.black,
-      inverseSurface: Color(0xFFE6E1E5),
-      onInverseSurface: Color(0xFF313033),
+      inverseSurface: const Color(0xFFE6E1E5),
+      onInverseSurface: const Color(0xFF313033),
       inversePrimary: _primaryBlue,
     );
   }
