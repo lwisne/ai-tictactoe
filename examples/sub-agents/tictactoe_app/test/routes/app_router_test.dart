@@ -18,6 +18,8 @@ void main() {
     });
 
     tearDown(() {
+      // Reset router to home to prevent state pollution between tests
+      AppRouter.router.go('/');
       // Reset GetIt container after each test to prevent registration conflicts
       GetIt.instance.reset();
     });

@@ -3,6 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tictactoe_app/core/theme/app_theme.dart';
 
 void main() {
+  // PRD-specified design token colors (matching app_theme.dart)
+  const primaryBlue = Color(0xFF1E88E5); // Blue 600
+  const secondaryAmber = Color(0xFFFFB300); // Amber 600
+  const surfaceLightBackground = Color(0xFFFAFAFA);
+  const surfaceDarkBackground = Color(0xFF121212);
+  const textPrimaryLight = Color(0xFF111111);
+
   group('AppTheme', () {
     group('Light Theme', () {
       test('should use Material 3', () {
@@ -17,22 +24,22 @@ void main() {
 
       test('should have PRD-specified primary color (Blue 600)', () {
         final theme = AppTheme.lightTheme;
-        expect(theme.colorScheme.primary, const Color(0xFF1E88E5));
+        expect(theme.colorScheme.primary, primaryBlue);
       });
 
       test('should have PRD-specified secondary color (Amber 600)', () {
         final theme = AppTheme.lightTheme;
-        expect(theme.colorScheme.secondary, const Color(0xFFFFB300));
+        expect(theme.colorScheme.secondary, secondaryAmber);
       });
 
       test('should have PRD-specified surface background', () {
         final theme = AppTheme.lightTheme;
-        expect(theme.colorScheme.surface, const Color(0xFFFAFAFA));
+        expect(theme.colorScheme.surface, surfaceLightBackground);
       });
 
       test('should have PRD-specified text color', () {
         final theme = AppTheme.lightTheme;
-        expect(theme.colorScheme.onSurface, const Color(0xFF111111));
+        expect(theme.colorScheme.onSurface, textPrimaryLight);
       });
 
       test('should have centered AppBar title', () {
@@ -47,8 +54,8 @@ void main() {
 
       test('should have proper AppBar colors', () {
         final theme = AppTheme.lightTheme;
-        expect(theme.appBarTheme.backgroundColor, const Color(0xFFFAFAFA));
-        expect(theme.appBarTheme.foregroundColor, const Color(0xFF111111));
+        expect(theme.appBarTheme.backgroundColor, surfaceLightBackground);
+        expect(theme.appBarTheme.foregroundColor, textPrimaryLight);
       });
     });
 
@@ -75,7 +82,7 @@ void main() {
 
       test('should have PRD-specified dark surface background', () {
         final theme = AppTheme.darkTheme;
-        expect(theme.colorScheme.surface, const Color(0xFF121212));
+        expect(theme.colorScheme.surface, surfaceDarkBackground);
       });
 
       test('should have light text on dark background', () {
@@ -95,7 +102,7 @@ void main() {
 
       test('should have proper AppBar colors', () {
         final theme = AppTheme.darkTheme;
-        expect(theme.appBarTheme.backgroundColor, const Color(0xFF121212));
+        expect(theme.appBarTheme.backgroundColor, surfaceDarkBackground);
         expect(theme.appBarTheme.foregroundColor, const Color(0xFFE6E1E5));
       });
     });
@@ -174,7 +181,7 @@ void main() {
       test('should have Icon theme configured', () {
         final theme = AppTheme.lightTheme;
         expect(theme.iconTheme.size, 24);
-        expect(theme.iconTheme.color, const Color(0xFF111111));
+        expect(theme.iconTheme.color, textPrimaryLight);
       });
 
       test('should have Divider theme configured', () {

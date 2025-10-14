@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/navigation/navigation_behavior.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/presentation/pages/settings_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
 import '../../helpers/test_helpers.dart';
@@ -36,8 +37,8 @@ void main() {
       AppRouter.router.push('/settings');
       await tester.pumpAndSettle();
 
-      // Verify we're on settings page
-      expect(find.text('Settings'), findsAtLeastNWidgets(1));
+      // Verify we're on settings page by widget type
+      expect(find.byType(SettingsPage), findsOneWidget);
 
       // Get context and go back
       final context = tester.element(find.byType(Scaffold).first);
@@ -78,8 +79,8 @@ void main() {
       AppRouter.router.go('/settings');
       await tester.pumpAndSettle();
 
-      // Verify we're on settings
-      expect(find.text('Settings'), findsAtLeastNWidgets(1));
+      // Verify we're on settings by widget type
+      expect(find.byType(SettingsPage), findsOneWidget);
 
       // Get context and go home
       final context = tester.element(find.byType(Scaffold).first);

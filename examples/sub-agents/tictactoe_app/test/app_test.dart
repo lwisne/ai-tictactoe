@@ -16,9 +16,7 @@ void main() {
     // Build the app
     await tester.pumpWidget(const TicTacToeApp());
 
-    // Pump to build initial frame
-    await tester.pump();
-    // Pump to complete async BLoC initialization
+    // Manual frame pumping for deterministic testing (avoids pumpAndSettle timeout)
     await tester.pump();
 
     // Verify the home page is displayed (widget type, not text - more resilient)

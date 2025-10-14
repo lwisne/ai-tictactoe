@@ -77,15 +77,14 @@ void main() {
   }
 
   group('Back Button Behavior - LWI-151', () {
-    // Reset router to home before each test to avoid state pollution
     setUp(() async {
       // Set up DI container with mocked dependencies
       await setupTestDI();
-      // Navigate to home to ensure clean state for each test
-      AppRouter.router.go('/');
     });
 
     tearDown(() async {
+      // Reset router to home to prevent state pollution between tests
+      AppRouter.router.go('/');
       // Clean up DI container
       await teardownTestDI();
     });
@@ -216,10 +215,7 @@ void main() {
 
         // Attempt to pop the route which should trigger PopScope
         Navigator.of(scaffoldContext).maybePop();
-        await tester.pump(); // Trigger immediate frame
-        await tester.pump(
-          const Duration(milliseconds: 100),
-        ); // Allow dialog animation
+        await tester.pumpAndSettle(); // Wait for dialog animation to complete
 
         // Verify exit dialog is shown
         expect(find.text('Exit Game?'), findsOneWidget);
@@ -407,7 +403,8 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        await tester.pumpAndSettle();
+        // Manual pump for deterministic test initialization
+        await tester.pump();
 
         // Start at home
         expect(find.byType(HomePage), findsOneWidget);
@@ -429,7 +426,8 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        await tester.pumpAndSettle();
+        // Manual pump for deterministic test initialization
+        await tester.pump();
 
         // Start at home
         expect(find.byType(HomePage), findsOneWidget);
@@ -454,7 +452,8 @@ void main() {
         await tester.pumpWidget(
           MaterialApp.router(routerConfig: AppRouter.router),
         );
-        await tester.pumpAndSettle();
+        // Manual pump for deterministic test initialization
+        await tester.pump();
 
         // Navigate to game
         AppRouter.router.push('/game');
