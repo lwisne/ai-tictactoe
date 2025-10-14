@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tictactoe_app/core/di/injection.dart';
 import 'package:tictactoe_app/main.dart';
 
 void main() {
+  setUpAll(() {
+    // Initialize dependency injection for tests
+    configureDependencies();
+  });
+
   testWidgets('App initializes and shows placeholder home page', (
     WidgetTester tester,
   ) async {
@@ -22,6 +28,7 @@ void main() {
 
   testWidgets('App uses Material 3', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -31,6 +38,7 @@ void main() {
 
   testWidgets('App has dark theme configured', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -41,6 +49,7 @@ void main() {
 
   testWidgets('App has correct title', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -49,6 +58,7 @@ void main() {
 
   testWidgets('App has router configuration', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -58,6 +68,7 @@ void main() {
 
   testWidgets('App has debug banner disabled', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
+    await tester.pumpAndSettle();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
