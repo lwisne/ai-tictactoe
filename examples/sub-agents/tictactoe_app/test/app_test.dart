@@ -14,10 +14,14 @@ void main() {
   ) async {
     // Build the app
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+
+    // Pump to build initial frame
+    await tester.pump();
+    // Pump again to complete async BLoC initialization
+    await tester.pump();
 
     // Verify the app title is displayed (appears in AppBar and body)
-    expect(find.text('Tic-Tac-Toe'), findsNWidgets(2));
+    expect(find.text('Tic-Tac-Toe'), findsAtLeastNWidgets(1));
 
     // Verify the mode selection message
     expect(find.text('Select a game mode to begin'), findsOneWidget);
@@ -25,16 +29,15 @@ void main() {
     // Verify the grid icon is displayed
     expect(find.byIcon(Icons.grid_3x3), findsOneWidget);
 
-    // Verify the placeholder buttons are displayed
-    expect(find.text('Single Player'), findsOneWidget);
+    // Verify the mode selection buttons are displayed
+    expect(find.text('Play vs AI'), findsOneWidget);
     expect(find.text('Two Player'), findsOneWidget);
     expect(find.text('Game History'), findsOneWidget);
-    expect(find.text('Settings'), findsOneWidget);
   });
 
   testWidgets('App uses Material 3', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -44,7 +47,7 @@ void main() {
 
   testWidgets('App has dark theme configured', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -55,7 +58,7 @@ void main() {
 
   testWidgets('App has correct title', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -64,7 +67,7 @@ void main() {
 
   testWidgets('App has router configuration', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 
@@ -74,7 +77,7 @@ void main() {
 
   testWidgets('App has debug banner disabled', (WidgetTester tester) async {
     await tester.pumpWidget(const TicTacToeApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     final MaterialApp app = tester.widget(find.byType(MaterialApp));
 

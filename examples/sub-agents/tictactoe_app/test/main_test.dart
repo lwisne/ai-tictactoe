@@ -6,7 +6,8 @@ void main() {
   testWidgets('main initializes app correctly', (WidgetTester tester) async {
     // Call the main function
     app.main();
-    await tester.pumpAndSettle();
+    await tester.pump();  // Initial build
+    await tester.pump();  // Complete async initialization
 
     // Verify the app is initialized
     expect(find.byType(MaterialApp), findsOneWidget);
