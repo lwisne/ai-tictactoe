@@ -28,4 +28,39 @@ void main() {
     // Verify Material 3 is enabled in the theme
     expect(app.theme?.useMaterial3, isTrue);
   });
+
+  testWidgets('App has dark theme configured', (WidgetTester tester) async {
+    await tester.pumpWidget(const TicTacToeApp());
+
+    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+
+    // Verify dark theme is configured
+    expect(app.darkTheme, isNotNull);
+    expect(app.darkTheme?.useMaterial3, isTrue);
+  });
+
+  testWidgets('App has correct title', (WidgetTester tester) async {
+    await tester.pumpWidget(const TicTacToeApp());
+
+    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+
+    expect(app.title, 'Tic-Tac-Toe');
+  });
+
+  testWidgets('App has router configuration', (WidgetTester tester) async {
+    await tester.pumpWidget(const TicTacToeApp());
+
+    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+
+    // Verify router is configured
+    expect(app.routerConfig, isNotNull);
+  });
+
+  testWidgets('App has debug banner disabled', (WidgetTester tester) async {
+    await tester.pumpWidget(const TicTacToeApp());
+
+    final MaterialApp app = tester.widget(find.byType(MaterialApp));
+
+    expect(app.debugShowCheckedModeBanner, isFalse);
+  });
 }
