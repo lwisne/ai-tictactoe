@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// AI Difficulty Selection page - placeholder
-/// Will be implemented with actual difficulty selection in future tasks
+/// AI Difficulty Selection page with standard back button behavior
+///
+/// As specified in LWI-151, this page should have a back button that returns
+/// to the previous screen (home) without confirmation.
 class AiDifficultyPage extends StatelessWidget {
   const AiDifficultyPage({super.key});
 
@@ -10,10 +13,8 @@ class AiDifficultyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select AI Difficulty'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // Standard back button - automatically provided by Flutter
+        // Uses go_router's navigation when pressed
       ),
       body: Center(
         child: Column(
@@ -31,24 +32,24 @@ class AiDifficultyPage extends StatelessWidget {
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 32),
-            // Placeholder difficulty buttons
+            // Difficulty selection buttons that will navigate to game
             ElevatedButton(
               onPressed: () {
-                // Will start game with easy AI
+                context.go('/game');
               },
               child: const Text('Easy'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Will start game with medium AI
+                context.go('/game');
               },
               child: const Text('Medium'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Will start game with hard AI
+                context.go('/game');
               },
               child: const Text('Hard'),
             ),

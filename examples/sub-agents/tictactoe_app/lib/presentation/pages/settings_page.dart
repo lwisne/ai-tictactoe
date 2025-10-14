@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// Settings page - placeholder
-/// Will be implemented with actual settings options in future tasks
+/// Settings page with standard back button behavior
+///
+/// As specified in LWI-151, settings should have a back button that returns
+/// to the previous screen without confirmation.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -10,10 +13,8 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // Standard back button - automatically provided by Flutter
+        // Uses go_router's navigation when pressed
       ),
       body: const Center(
         child: Column(

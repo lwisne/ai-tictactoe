@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// Game Details page - placeholder for viewing historical games
-/// Will be implemented with actual game replay in future tasks
+/// Game Details page with standard back button behavior
+///
+/// As specified in LWI-151, this page should have a back button that returns
+/// to the history list without confirmation.
 class GameDetailsPage extends StatelessWidget {
   /// The ID of the game to display
   final String gameId;
@@ -13,10 +16,8 @@ class GameDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Game Details'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        // Standard back button - automatically provided by Flutter
+        // Uses go_router's navigation when pressed, returns to history page
       ),
       body: Center(
         child: Column(

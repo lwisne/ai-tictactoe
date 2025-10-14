@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-/// Home page - placeholder for mode selection
-/// Will be implemented in future tasks
+/// Home page - top-level screen with no back button
+///
+/// As specified in LWI-151, the home screen is the top-level navigation point
+/// and should not have a back button. Users can access all main features from here.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tic-Tac-Toe')),
+      // No leading widget in AppBar - home screen has no back button
+      appBar: AppBar(
+        title: const Text('Tic-Tac-Toe'),
+        // Explicitly set automaticallyImplyLeading to false to ensure no back button
+        automaticallyImplyLeading: false,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -25,31 +33,31 @@ class HomePage extends StatelessWidget {
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 32),
-            // Placeholder buttons for navigation demonstration
+            // Navigation buttons for main features
             ElevatedButton(
               onPressed: () {
-                // Will navigate to AI difficulty selection
+                context.go('/ai-select');
               },
               child: const Text('Single Player'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Will navigate directly to game
+                context.go('/game');
               },
               child: const Text('Two Player'),
             ),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: () {
-                // Will navigate to history
+                context.go('/history');
               },
               child: const Text('Game History'),
             ),
             const SizedBox(height: 8),
             OutlinedButton(
               onPressed: () {
-                // Will navigate to settings
+                context.go('/settings');
               },
               child: const Text('Settings'),
             ),
