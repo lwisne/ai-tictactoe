@@ -21,6 +21,7 @@ import 'package:tictactoe_app/presentation/blocs/theme/theme_bloc.dart'
     as _i126;
 import 'package:tictactoe_app/presentation/cubits/game_mode_cubit.dart'
     as _i293;
+import 'package:tictactoe_app/presentation/cubits/game_ui_cubit.dart' as _i999;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -31,6 +32,7 @@ extension GetItInjectableX on _i174.GetIt {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
     gh.factory<_i1050.SettingsBloc>(() => _i1050.SettingsBloc());
     gh.factory<_i130.GameBloc>(() => _i130.GameBloc());
+    gh.factory<_i999.GameUICubit>(() => _i999.GameUICubit());
     gh.lazySingleton<_i947.ThemeRepository>(() => _i947.ThemeRepository());
     gh.lazySingleton<_i840.GameModeRepository>(
       () => _i840.GameModeRepository(),

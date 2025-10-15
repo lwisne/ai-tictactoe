@@ -1539,7 +1539,7 @@ Future<void> init() async {
 
 - **NEVER put business logic in Blocs**
 - **NEVER put business logic in Models**
-- **NEVER use StatefulWidget**
+- **NEVER use StatefulWidget** - This rule has NO exceptions. Even for temporary/MVP code, use BLoC or Cubit for state management. StatefulWidget violates our architecture principles and makes code harder to test and maintain.
 - Don't make Blocs dependent on each other
 - Don't access services directly from widgets (go through Blocs)
 - Don't mix UI concerns with business logic
@@ -2243,7 +2243,7 @@ Future<void> init() async {
 
 - **NEVER put business logic in Blocs**
 - **NEVER put business logic in Models**
-- **NEVER use StatefulWidget**
+- **NEVER use StatefulWidget** - This rule has NO exceptions. Even for temporary/MVP code, use BLoC or Cubit for state management. StatefulWidget violates our architecture principles and makes code harder to test and maintain.
 - Don't make Blocs dependent on each other
 - Don't access services directly from widgets (go through Blocs)
 - Don't mix UI concerns with business logic
