@@ -125,7 +125,7 @@ void main() {
 
         // Verify still on game page
         expect(find.byType(GamePage), findsOneWidget);
-        expect(find.text('Game Page'), findsOneWidget);
+        expect(find.text('Game'), findsOneWidget);
       });
 
       testWidgets('exit button navigates to home', (tester) async {
