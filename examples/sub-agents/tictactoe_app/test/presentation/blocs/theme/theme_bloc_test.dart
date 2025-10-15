@@ -4,13 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/data/repositories/theme_repository.dart';
 import 'package:tictactoe_app/domain/models/theme_preference.dart';
-import 'package:tictactoe_app/presentation/cubits/theme_cubit.dart';
+import 'package:tictactoe_app/presentation/blocs/theme/theme_bloc.dart';
+import 'package:tictactoe_app/presentation/blocs/theme/theme_event.dart';
+import 'package:tictactoe_app/presentation/blocs/theme/theme_state.dart';
 
 class MockThemeRepository extends Mock implements ThemeRepository {}
 
 void main() {
   late ThemeRepository mockRepository;
-  late ThemeCubit themeCubit;
+  late ThemeBloc themeBloc;
 
   setUpAll(() {
     // Register fallback value for mocktail
@@ -19,11 +21,11 @@ void main() {
 
   setUp(() {
     mockRepository = MockThemeRepository();
-    themeCubit = ThemeCubit(mockRepository);
+    themeBloc = ThemeBloc(mockRepository);
   });
 
   tearDown(() {
-    themeCubit.close();
+    themeBloc.close();
   });
 
   group('ThemeState', () {
@@ -65,21 +67,53 @@ void main() {
     });
   });
 
-  group('ThemeCubit', () {
-    test('initial state should be system theme', () {
-      expect(themeCubit.state.preference, ThemePreference.system);
-      expect(themeCubit.state.isLoading, isFalse);
+  group('ThemeEvent', () {
+    test('ThemeInitialized should support equality comparison', () {
+      const event1 = ThemeInitialized();
+      const event2 = ThemeInitialized();
+
+      expect(event1, equals(event2));
     });
 
-    blocTest<ThemeCubit, ThemeState>(
-      'initializeTheme should load saved settings',
+    test('ThemeChanged should support equality comparison', () {
+      const event1 = ThemeChanged(ThemePreference.light);
+      const event2 = ThemeChanged(ThemePreference.light);
+      const event3 = ThemeChanged(ThemePreference.dark);
+
+      expect(event1, equals(event2));
+      expect(event1, isNot(equals(event3)));
+    });
+
+    test('ThemeResetToSystem should support equality comparison', () {
+      const event1 = ThemeResetToSystem();
+      const event2 = ThemeResetToSystem();
+
+      expect(event1, equals(event2));
+    });
+
+    test('different events should not be equal', () {
+      const event1 = ThemeInitialized();
+      const event2 = ThemeChanged(ThemePreference.light);
+
+      expect(event1, isNot(equals(event2)));
+    });
+  });
+
+  group('ThemeBloc', () {
+    test('initial state should be system theme', () {
+      expect(themeBloc.state.preference, ThemePreference.system);
+      expect(themeBloc.state.isLoading, isFalse);
+    });
+
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeInitialized should load saved settings',
       setUp: () {
         when(() => mockRepository.loadThemeSettings()).thenAnswer(
           (_) async => const ThemeSettings(preference: ThemePreference.dark),
         );
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.initializeTheme(),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeInitialized()),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.dark, isLoading: false),
@@ -89,30 +123,30 @@ void main() {
       },
     );
 
-    blocTest<ThemeCubit, ThemeState>(
-      'initializeTheme should use system default on error',
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeInitialized should use system default on error',
       setUp: () {
         when(
           () => mockRepository.loadThemeSettings(),
         ).thenThrow(Exception('Load error'));
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.initializeTheme(),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeInitialized()),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.system, isLoading: false),
       ],
     );
 
-    blocTest<ThemeCubit, ThemeState>(
-      'setThemePreference should save and update state to light',
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeChanged should save and update state to light',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenAnswer((_) async {});
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.setThemePreference(ThemePreference.light),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeChanged(ThemePreference.light)),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.light, isLoading: false),
@@ -126,15 +160,15 @@ void main() {
       },
     );
 
-    blocTest<ThemeCubit, ThemeState>(
-      'setThemePreference should save and update state to dark',
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeChanged should save and update state to dark',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenAnswer((_) async {});
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.setThemePreference(ThemePreference.dark),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeChanged(ThemePreference.dark)),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.dark, isLoading: false),
@@ -148,30 +182,30 @@ void main() {
       },
     );
 
-    blocTest<ThemeCubit, ThemeState>(
-      'setThemePreference should revert on save error',
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeChanged should revert on save error',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenThrow(Exception('Save error'));
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.setThemePreference(ThemePreference.dark),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeChanged(ThemePreference.dark)),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.system, isLoading: false),
       ],
     );
 
-    blocTest<ThemeCubit, ThemeState>(
-      'resetToSystem should set preference to system',
+    blocTest<ThemeBloc, ThemeState>(
+      'ThemeResetToSystem should delegate to ThemeChanged',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenAnswer((_) async {});
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) => cubit.resetToSystem(),
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) => bloc.add(const ThemeResetToSystem()),
       expect: () => [
         const ThemeState(preference: ThemePreference.system, isLoading: true),
         const ThemeState(preference: ThemePreference.system, isLoading: false),
@@ -185,18 +219,20 @@ void main() {
       },
     );
 
-    blocTest<ThemeCubit, ThemeState>(
+    blocTest<ThemeBloc, ThemeState>(
       'should handle multiple theme changes',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenAnswer((_) async {});
       },
-      build: () => ThemeCubit(mockRepository),
-      act: (cubit) async {
-        await cubit.setThemePreference(ThemePreference.light);
-        await cubit.setThemePreference(ThemePreference.dark);
-        await cubit.setThemePreference(ThemePreference.system);
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) async {
+        bloc.add(const ThemeChanged(ThemePreference.light));
+        await Future.delayed(const Duration(milliseconds: 50));
+        bloc.add(const ThemeChanged(ThemePreference.dark));
+        await Future.delayed(const Duration(milliseconds: 50));
+        bloc.add(const ThemeChanged(ThemePreference.system));
       },
       expect: () => [
         // First change to light
@@ -214,27 +250,42 @@ void main() {
       },
     );
 
-    blocTest<ThemeCubit, ThemeState>(
+    blocTest<ThemeBloc, ThemeState>(
       'should maintain state after failed save attempt',
       setUp: () {
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenAnswer((_) async {});
       },
-      build: () => ThemeCubit(mockRepository),
+      build: () => ThemeBloc(mockRepository),
       seed: () => const ThemeState(preference: ThemePreference.light),
-      act: (cubit) async {
+      act: (bloc) async {
         // This should fail but maintain the light preference
         when(
           () => mockRepository.saveThemeSettings(any()),
         ).thenThrow(Exception('Save error'));
-        await cubit.setThemePreference(ThemePreference.dark);
+        bloc.add(const ThemeChanged(ThemePreference.dark));
       },
       expect: () => [
         const ThemeState(preference: ThemePreference.light, isLoading: true),
         const ThemeState(preference: ThemePreference.light, isLoading: false),
       ],
     );
+
+    test('should close without errors', () async {
+      final bloc = ThemeBloc(mockRepository);
+      await expectLater(bloc.close(), completes);
+    });
+
+    test('should not emit after close', () async {
+      final bloc = ThemeBloc(mockRepository);
+      await bloc.close();
+
+      expect(
+        () => bloc.add(const ThemeInitialized()),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('Integration with ThemeMode', () {
@@ -250,6 +301,55 @@ void main() {
       for (var i = 0; i < states.length; i++) {
         expect(states[i].themeMode, expectedModes[i]);
       }
+    });
+  });
+
+  group('ThemeBloc Event Processing', () {
+    blocTest<ThemeBloc, ThemeState>(
+      'should process initialization then change events',
+      setUp: () {
+        when(() => mockRepository.loadThemeSettings()).thenAnswer(
+          (_) async => const ThemeSettings(preference: ThemePreference.system),
+        );
+        when(
+          () => mockRepository.saveThemeSettings(any()),
+        ).thenAnswer((_) async {});
+      },
+      build: () => ThemeBloc(mockRepository),
+      act: (bloc) async {
+        bloc.add(const ThemeInitialized());
+        await Future.delayed(const Duration(milliseconds: 50));
+        bloc.add(const ThemeChanged(ThemePreference.dark));
+      },
+      expect: () => [
+        const ThemeState(preference: ThemePreference.system, isLoading: true),
+        const ThemeState(preference: ThemePreference.system, isLoading: false),
+        const ThemeState(preference: ThemePreference.system, isLoading: true),
+        const ThemeState(preference: ThemePreference.dark, isLoading: false),
+      ],
+    );
+
+    test('should work with stream subscription', () async {
+      when(
+        () => mockRepository.saveThemeSettings(any()),
+      ).thenAnswer((_) async {});
+
+      final bloc = ThemeBloc(mockRepository);
+      final states = <ThemeState>[];
+
+      final subscription = bloc.stream.listen((state) {
+        states.add(state);
+      });
+
+      bloc.add(const ThemeChanged(ThemePreference.light));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(states.length, equals(2));
+      expect(states[0].isLoading, isTrue);
+      expect(states[1].preference, ThemePreference.light);
+
+      await subscription.cancel();
+      await bloc.close();
     });
   });
 }
