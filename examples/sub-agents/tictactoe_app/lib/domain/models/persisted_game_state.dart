@@ -3,13 +3,22 @@ import 'game_state.dart';
 
 /// Represents a complete persisted game session
 ///
-/// This model contains everything needed to resume a game after
-/// app backgrounding or kill:
+/// This model is a **composite** wrapper around GameState that adds
+/// persistence-specific data (session scores and timestamp).
+///
+/// **Why separate from GameState?**
+/// - GameState: Domain model representing the game's business logic state
+///   (board, turn, config, result) - used throughout the app
+/// - PersistedGameState: Data layer model that wraps GameState + adds
+///   persistence metadata (scores, timestamp) - only used for storage
+///
+/// This separation follows Clean Architecture by keeping domain models
+/// independent of persistence concerns.
+///
+/// Contains:
 /// - The current game state (board, turn, config, etc.)
 /// - Session scores (player wins, AI wins, draws)
 /// - Timestamp of when state was saved
-///
-/// This is a pure data model with no business logic.
 class PersistedGameState extends Equatable {
   /// The current game state
   final GameState gameState;

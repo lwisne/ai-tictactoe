@@ -34,6 +34,13 @@ class TicTacToeApp extends StatefulWidget {
   State<TicTacToeApp> createState() => _TicTacToeAppState();
 }
 
+/// Root app state managing lifecycle integration
+///
+/// Note: StatefulWidget is required here (not violating BLoC pattern) because:
+/// 1. AppLifecycleObserver requires register()/unregister() in initState/dispose
+/// 2. GameBloc reference needed to dispatch events on lifecycle changes
+/// 3. This is infrastructure/framework integration, not business logic state
+/// 4. All business logic state remains in BLoCs (GameBloc, ThemeBloc, etc.)
 class _TicTacToeAppState extends State<TicTacToeApp> {
   late final AppLifecycleObserver _lifecycleObserver;
   late final GameBloc _gameBloc;
@@ -65,6 +72,9 @@ class _TicTacToeAppState extends State<TicTacToeApp> {
   @override
   void dispose() {
     _lifecycleObserver.unregister();
+    // Note: _gameBloc is managed by dependency injection (GetIt)
+    // and should not be closed here. BlocProvider.value does not own
+    // the bloc lifecycle - GetIt handles disposal on app termination.
     super.dispose();
   }
 

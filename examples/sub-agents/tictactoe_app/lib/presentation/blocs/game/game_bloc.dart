@@ -281,8 +281,12 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       savedAt: DateTime.now(),
     );
 
-    // Skip save if state hasn't changed
-    if (_lastSavedState == persistedState) {
+    // Skip save if state hasn't changed (compare only meaningful fields)
+    if (_lastSavedState != null &&
+        _lastSavedState!.gameState == persistedState.gameState &&
+        _lastSavedState!.playerWins == persistedState.playerWins &&
+        _lastSavedState!.aiWins == persistedState.aiWins &&
+        _lastSavedState!.draws == persistedState.draws) {
       return;
     }
 
@@ -292,8 +296,9 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   /// Helper: Update session scores based on game result
   ///
-  /// Note: This assumes Player.x is always the "player" and Player.o is AI
-  /// in single player mode. In two-player mode, only draws matter.
+  /// Note: This tracks all game results regardless of mode.
+  /// In single-player mode: Player.x is the user, Player.o is AI.
+  /// In two-player mode: Both players are users, so "wins" track X vs O.
   void _updateSessionScores(GameResult result) {
     switch (result) {
       case GameResult.win:
