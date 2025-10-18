@@ -1,232 +1,594 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tictactoe_app/domain/models/game_config.dart';
+import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/domain/models/game_result.dart';
+import 'package:tictactoe_app/domain/models/player.dart';
+import 'package:tictactoe_app/domain/models/position.dart';
+import 'package:tictactoe_app/domain/services/game_service.dart';
 import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart';
 import 'package:tictactoe_app/presentation/blocs/game/game_event.dart';
 import 'package:tictactoe_app/presentation/blocs/game/game_state.dart';
 
 void main() {
-  late GameBloc gameBloc;
-
-  setUp(() {
-    gameBloc = GameBloc();
-  });
-
-  tearDown(() {
-    gameBloc.close();
-  });
-
-  group('GameState', () {
-    test('should have correct default values', () {
-      const state = GameState();
-      expect(state.isInitialized, isFalse);
-      expect(state.isLoading, isFalse);
-    });
-
-    test('should support copyWith for isInitialized', () {
-      const state1 = GameState();
-      final state2 = state1.copyWith(isInitialized: true);
-
-      expect(state2.isInitialized, isTrue);
-      expect(state2.isLoading, isFalse);
-    });
-
-    test('should support copyWith for isLoading', () {
-      const state1 = GameState();
-      final state2 = state1.copyWith(isLoading: true);
-
-      expect(state2.isInitialized, isFalse);
-      expect(state2.isLoading, isTrue);
-    });
-
-    test('should support copyWith for multiple properties', () {
-      const state1 = GameState();
-      final state2 = state1.copyWith(isInitialized: true, isLoading: true);
-
-      expect(state2.isInitialized, isTrue);
-      expect(state2.isLoading, isTrue);
-    });
-
-    test('should support equality comparison', () {
-      const state1 = GameState(isInitialized: true);
-      const state2 = GameState(isInitialized: true);
-      const state3 = GameState(isInitialized: false);
-
-      expect(state1, equals(state2));
-      expect(state1, isNot(equals(state3)));
-    });
-
-    test('should include all properties in equality check', () {
-      const state1 = GameState(isInitialized: true, isLoading: true);
-      const state2 = GameState(isInitialized: true, isLoading: true);
-      const state3 = GameState(isInitialized: true, isLoading: false);
-
-      expect(state1, equals(state2));
-      expect(state1, isNot(equals(state3)));
-    });
-  });
-
-  group('GameEvent', () {
-    test('GameInitialized should support equality comparison', () {
-      const event1 = GameInitialized();
-      const event2 = GameInitialized();
-
-      expect(event1, equals(event2));
-    });
-
-    test('GamePlaceholderEvent should support equality comparison', () {
-      const event1 = GamePlaceholderEvent();
-      const event2 = GamePlaceholderEvent();
-
-      expect(event1, equals(event2));
-    });
-
-    test('different events should not be equal', () {
-      const event1 = GameInitialized();
-      const event2 = GamePlaceholderEvent();
-
-      expect(event1, isNot(equals(event2)));
-    });
-  });
-
   group('GameBloc', () {
-    test('initial state should have correct default values', () {
-      expect(gameBloc.state.isInitialized, isFalse);
-      expect(gameBloc.state.isLoading, isFalse);
+    late GameService gameService;
+    late GameBloc gameBloc;
+
+    setUp(() {
+      gameService = GameService();
+      gameBloc = GameBloc(gameService: gameService);
     });
 
-    blocTest<GameBloc, GameState>(
-      'emits loading then initialized state when GameInitialized is added',
-      build: () => GameBloc(),
-      act: (bloc) => bloc.add(const GameInitialized()),
-      wait: const Duration(milliseconds: 200),
-      expect: () => [
-        const GameState(isInitialized: false, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-      ],
-    );
-
-    blocTest<GameBloc, GameState>(
-      'should handle GamePlaceholderEvent without emitting states',
-      build: () => GameBloc(),
-      act: (bloc) => bloc.add(const GamePlaceholderEvent()),
-      expect: () => [],
-    );
-
-    blocTest<GameBloc, GameState>(
-      'should handle multiple initialization events',
-      build: () => GameBloc(),
-      act: (bloc) async {
-        bloc.add(const GameInitialized());
-        await Future.delayed(const Duration(milliseconds: 200));
-        bloc.add(const GameInitialized());
-      },
-      wait: const Duration(milliseconds: 400),
-      expect: () => [
-        const GameState(isInitialized: false, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-        const GameState(isInitialized: true, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-      ],
-    );
-
-    blocTest<GameBloc, GameState>(
-      'should maintain state after placeholder event',
-      build: () => GameBloc(),
-      seed: () => const GameState(isInitialized: true, isLoading: false),
-      act: (bloc) => bloc.add(const GamePlaceholderEvent()),
-      expect: () => [],
-      verify: (bloc) {
-        expect(bloc.state.isInitialized, isTrue);
-        expect(bloc.state.isLoading, isFalse);
-      },
-    );
-
-    blocTest<GameBloc, GameState>(
-      'should handle mixed event sequence',
-      build: () => GameBloc(),
-      act: (bloc) async {
-        bloc.add(const GameInitialized());
-        await Future.delayed(const Duration(milliseconds: 200));
-        bloc.add(const GamePlaceholderEvent());
-      },
-      wait: const Duration(milliseconds: 400),
-      expect: () => [
-        const GameState(isInitialized: false, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-      ],
-    );
-
-    test('should close without errors', () async {
-      final bloc = GameBloc();
-      await expectLater(bloc.close(), completes);
+    tearDown(() {
+      gameBloc.close();
     });
 
-    test('should not emit after close', () async {
-      final bloc = GameBloc();
-      await bloc.close();
+    test('initial state is GameInitial', () {
+      expect(gameBloc.state, const GameInitial());
+    });
 
-      expect(
-        () => bloc.add(const GameInitialized()),
-        throwsA(isA<StateError>()),
+    group('GameInitialized', () {
+      blocTest<GameBloc, GameState>(
+        'should emit GameInitial when initialized',
+        build: () => gameBloc,
+        act: (bloc) => bloc.add(const GameInitialized()),
+        expect: () => [const GameInitial()],
       );
     });
-  });
 
-  group('GameBloc Integration', () {
-    blocTest<GameBloc, GameState>(
-      'should demonstrate complete placeholder lifecycle',
-      build: () => GameBloc(),
-      act: (bloc) async {
-        // Initialize
-        bloc.add(const GameInitialized());
-        await Future.delayed(const Duration(milliseconds: 200));
+    group('StartNewGame', () {
+      const testConfig = GameConfig(
+        gameMode: GameMode.twoPlayer,
+        firstPlayer: Player.x,
+      );
 
-        // Trigger placeholder events
-        bloc.add(const GamePlaceholderEvent());
-        bloc.add(const GamePlaceholderEvent());
+      blocTest<GameBloc, GameState>(
+        'should emit GameInProgress with initial game state',
+        build: () => gameBloc,
+        act: (bloc) => bloc.add(const StartNewGame(testConfig)),
+        expect: () => [
+          isA<GameInProgress>()
+              .having(
+                (state) => state.gameState.currentPlayer,
+                'currentPlayer',
+                Player.x,
+              )
+              .having(
+                (state) => state.gameState.result,
+                'result',
+                GameResult.ongoing,
+              )
+              .having((state) => state.gameState.config, 'config', testConfig),
+        ],
+      );
 
-        // Re-initialize
-        bloc.add(const GameInitialized());
-      },
-      wait: const Duration(milliseconds: 500),
-      expect: () => [
-        const GameState(isInitialized: false, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-        const GameState(isInitialized: true, isLoading: true),
-        const GameState(isInitialized: true, isLoading: false),
-      ],
-    );
+      blocTest<GameBloc, GameState>(
+        'should create empty board',
+        build: () => gameBloc,
+        act: (bloc) => bloc.add(const StartNewGame(testConfig)),
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          final board = state.gameState.board;
 
-    test('should work with stream subscription', () async {
-      final bloc = GameBloc();
-      final states = <GameState>[];
+          expect(board.length, equals(3));
+          for (final row in board) {
+            expect(row.length, equals(3));
+            for (final cell in row) {
+              expect(cell, equals(Player.none));
+            }
+          }
+        },
+      );
 
-      final subscription = bloc.stream.listen((state) {
-        states.add(state);
-      });
-
-      bloc.add(const GameInitialized());
-      await Future.delayed(const Duration(milliseconds: 150));
-
-      expect(states.length, equals(2));
-      expect(states[0].isLoading, isTrue);
-      expect(states[1].isInitialized, isTrue);
-
-      await subscription.cancel();
-      await bloc.close();
+      blocTest<GameBloc, GameState>(
+        'should set firstPlayer based on config',
+        build: () => gameBloc,
+        act: (bloc) => bloc.add(
+          const StartNewGame(
+            GameConfig(gameMode: GameMode.twoPlayer, firstPlayer: Player.o),
+          ),
+        ),
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          expect(state.gameState.currentPlayer, equals(Player.o));
+        },
+      );
     });
-  });
 
-  group('GameBloc Documentation', () {
-    test('should be properly documented as a placeholder', () {
-      // This test verifies the placeholder nature of GameBloc
-      // Future tasks will expand this with actual game logic
-      final bloc = GameBloc();
+    group('MakeMove', () {
+      const testConfig = GameConfig(
+        gameMode: GameMode.twoPlayer,
+        firstPlayer: Player.x,
+      );
 
-      // Initial state is uninitialized
-      expect(bloc.state.isInitialized, isFalse);
+      blocTest<GameBloc, GameState>(
+        'should emit GameInProgress with updated state after valid move',
+        build: () => gameBloc,
+        seed: () {
+          final gameState = gameService.createNewGame(testConfig);
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const MakeMove(Position(row: 0, col: 0))),
+        expect: () => [
+          isA<GameInProgress>().having(
+            (state) => state.gameState.board[0][0],
+            'board[0][0]',
+            Player.x,
+          ),
+        ],
+      );
 
-      bloc.close();
+      blocTest<GameBloc, GameState>(
+        'should switch players after valid move',
+        build: () => gameBloc,
+        seed: () {
+          final gameState = gameService.createNewGame(testConfig);
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const MakeMove(Position(row: 1, col: 1))),
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          expect(state.gameState.currentPlayer, equals(Player.o));
+        },
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should not emit state for invalid move (occupied cell)',
+        build: () => gameBloc,
+        seed: () {
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          );
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const MakeMove(Position(row: 0, col: 0))),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should not emit state for invalid move (out of bounds)',
+        build: () => gameBloc,
+        seed: () {
+          final gameState = gameService.createNewGame(testConfig);
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const MakeMove(Position(row: 3, col: 0))),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should ignore move when not in GameInProgress state',
+        build: () => gameBloc,
+        seed: () => const GameInitial(),
+        act: (bloc) => bloc.add(const MakeMove(Position(row: 0, col: 0))),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should emit GameFinished when player wins',
+        build: () => gameBloc,
+        seed: () {
+          // Create near-win scenario: X needs one more for top row
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 0),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 1),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          ); // O
+          return GameInProgress(gameState);
+        },
+        act: (bloc) =>
+            bloc.add(const MakeMove(Position(row: 0, col: 2))), // X wins
+        expect: () => [
+          isA<GameFinished>()
+              .having(
+                (state) => state.gameState.result,
+                'result',
+                GameResult.win,
+              )
+              .having((state) => state.gameState.winner, 'winner', Player.x)
+              .having(
+                (state) => state.gameState.winningLine?.length,
+                'winningLine length',
+                3,
+              ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should emit GameFinished with draw when board fills',
+        build: () => gameBloc,
+        seed: () {
+          // Create near-draw scenario
+          var gameState = gameService.createNewGame(testConfig);
+          // X | X | O
+          // O | O | X
+          // X | _ | _
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 2),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 1),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 0),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 2),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 2, col: 0),
+          ); // X
+          return GameInProgress(gameState);
+        },
+        act: (bloc) {
+          bloc.add(const MakeMove(Position(row: 2, col: 1))); // O
+          bloc.add(const MakeMove(Position(row: 2, col: 2))); // X draws
+        },
+        expect: () => [
+          isA<GameInProgress>(), // After O's move
+          isA<GameFinished>().having(
+            (state) => state.gameState.result,
+            'result',
+            GameResult.draw,
+          ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should add move to history',
+        build: () => gameBloc,
+        seed: () {
+          final gameState = gameService.createNewGame(testConfig);
+          return GameInProgress(gameState);
+        },
+        act: (bloc) {
+          bloc.add(const MakeMove(Position(row: 0, col: 0)));
+          bloc.add(const MakeMove(Position(row: 1, col: 1)));
+        },
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          expect(state.gameState.moveHistory.length, equals(2));
+          expect(
+            state.gameState.moveHistory[0],
+            equals(const Position(row: 0, col: 0)),
+          );
+          expect(
+            state.gameState.moveHistory[1],
+            equals(const Position(row: 1, col: 1)),
+          );
+        },
+      );
+    });
+
+    group('UndoMove', () {
+      const testConfig = GameConfig(
+        gameMode: GameMode.twoPlayer,
+        firstPlayer: Player.x,
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should emit GameInProgress with previous state',
+        build: () => gameBloc,
+        seed: () {
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          ); // O
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const UndoMove()),
+        expect: () => [
+          isA<GameInProgress>()
+              .having(
+                (state) => state.gameState.board[1][1],
+                'board[1][1]',
+                Player.none,
+              )
+              .having(
+                (state) => state.gameState.moveHistory.length,
+                'moveHistory length',
+                1,
+              )
+              .having(
+                (state) => state.gameState.currentPlayer,
+                'currentPlayer',
+                Player.o,
+              ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should not emit state when no moves to undo',
+        build: () => gameBloc,
+        seed: () {
+          final gameState = gameService.createNewGame(testConfig);
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const UndoMove()),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should convert GameFinished to GameInProgress after undo',
+        build: () => gameBloc,
+        seed: () {
+          // Create a won game
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 0),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 1),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 2),
+          ); // X wins
+          return GameFinished(gameState);
+        },
+        act: (bloc) => bloc.add(const UndoMove()),
+        expect: () => [
+          isA<GameInProgress>().having(
+            (state) => state.gameState.result,
+            'result',
+            GameResult.ongoing,
+          ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should ignore undo when in GameInitial state',
+        build: () => gameBloc,
+        seed: () => const GameInitial(),
+        act: (bloc) => bloc.add(const UndoMove()),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should ignore undo when in GameError state',
+        build: () => gameBloc,
+        seed: () => const GameError('Test error'),
+        act: (bloc) => bloc.add(const UndoMove()),
+        expect: () => [],
+      );
+    });
+
+    group('ResetGame', () {
+      const testConfig = GameConfig(
+        gameMode: GameMode.twoPlayer,
+        firstPlayer: Player.x,
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should emit GameInProgress with fresh game state',
+        build: () => gameBloc,
+        seed: () {
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          );
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          );
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const ResetGame()),
+        expect: () => [
+          isA<GameInProgress>()
+              .having(
+                (state) => state.gameState.board[0][0],
+                'board[0][0]',
+                Player.none,
+              )
+              .having(
+                (state) => state.gameState.board[1][1],
+                'board[1][1]',
+                Player.none,
+              )
+              .having(
+                (state) => state.gameState.moveHistory,
+                'moveHistory',
+                isEmpty,
+              )
+              .having(
+                (state) => state.gameState.currentPlayer,
+                'currentPlayer',
+                Player.x,
+              )
+              .having(
+                (state) => state.gameState.result,
+                'result',
+                GameResult.ongoing,
+              ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should preserve config when resetting',
+        build: () => gameBloc,
+        seed: () {
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          );
+          return GameInProgress(gameState);
+        },
+        act: (bloc) => bloc.add(const ResetGame()),
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          expect(state.gameState.config, equals(testConfig));
+        },
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should reset from GameFinished state',
+        build: () => gameBloc,
+        seed: () {
+          // Create a won game
+          var gameState = gameService.createNewGame(testConfig);
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 0),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 0),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 1),
+          ); // X
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 1, col: 1),
+          ); // O
+          gameState = gameService.makeMove(
+            gameState,
+            const Position(row: 0, col: 2),
+          ); // X wins
+          return GameFinished(gameState);
+        },
+        act: (bloc) => bloc.add(const ResetGame()),
+        expect: () => [
+          isA<GameInProgress>().having(
+            (state) => state.gameState.result,
+            'result',
+            GameResult.ongoing,
+          ),
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should ignore reset when in GameInitial state',
+        build: () => gameBloc,
+        seed: () => const GameInitial(),
+        act: (bloc) => bloc.add(const ResetGame()),
+        expect: () => [],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should ignore reset when in GameError state',
+        build: () => gameBloc,
+        seed: () => const GameError('Test error'),
+        act: (bloc) => bloc.add(const ResetGame()),
+        expect: () => [],
+      );
+    });
+
+    group('Integration scenarios', () {
+      const testConfig = GameConfig(
+        gameMode: GameMode.twoPlayer,
+        firstPlayer: Player.x,
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should handle complete game flow: start -> moves -> win',
+        build: () => gameBloc,
+        act: (bloc) {
+          bloc.add(const StartNewGame(testConfig));
+          bloc.add(const MakeMove(Position(row: 0, col: 0))); // X
+          bloc.add(const MakeMove(Position(row: 1, col: 0))); // O
+          bloc.add(const MakeMove(Position(row: 0, col: 1))); // X
+          bloc.add(const MakeMove(Position(row: 1, col: 1))); // O
+          bloc.add(const MakeMove(Position(row: 0, col: 2))); // X wins
+        },
+        expect: () => [
+          isA<GameInProgress>(), // After StartNewGame
+          isA<GameInProgress>(), // After move 1
+          isA<GameInProgress>(), // After move 2
+          isA<GameInProgress>(), // After move 3
+          isA<GameInProgress>(), // After move 4
+          isA<GameFinished>(), // After winning move
+        ],
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should handle game flow: start -> moves -> undo -> continue',
+        build: () => gameBloc,
+        act: (bloc) {
+          bloc.add(const StartNewGame(testConfig));
+          bloc.add(const MakeMove(Position(row: 0, col: 0))); // X
+          bloc.add(const MakeMove(Position(row: 1, col: 1))); // O
+          bloc.add(const UndoMove()); // Undo O's move
+          bloc.add(const MakeMove(Position(row: 2, col: 2))); // O again
+        },
+        verify: (bloc) {
+          final state = bloc.state as GameInProgress;
+          expect(state.gameState.board[1][1], equals(Player.none));
+          expect(state.gameState.board[2][2], equals(Player.o));
+          expect(state.gameState.moveHistory.length, equals(2));
+        },
+      );
+
+      blocTest<GameBloc, GameState>(
+        'should handle game flow: win -> reset -> new game',
+        build: () => gameBloc,
+        act: (bloc) {
+          bloc.add(const StartNewGame(testConfig));
+          // Quick win scenario
+          bloc.add(const MakeMove(Position(row: 0, col: 0))); // X
+          bloc.add(const MakeMove(Position(row: 1, col: 0))); // O
+          bloc.add(const MakeMove(Position(row: 0, col: 1))); // X
+          bloc.add(const MakeMove(Position(row: 1, col: 1))); // O
+          bloc.add(const MakeMove(Position(row: 0, col: 2))); // X wins
+          bloc.add(const ResetGame());
+        },
+        expect: () => [
+          isA<GameInProgress>(), // Start
+          isA<GameInProgress>(), // Move 1
+          isA<GameInProgress>(), // Move 2
+          isA<GameInProgress>(), // Move 3
+          isA<GameInProgress>(), // Move 4
+          isA<GameFinished>(), // Win
+          isA<GameInProgress>(), // Reset
+        ],
+      );
     });
   });
 }

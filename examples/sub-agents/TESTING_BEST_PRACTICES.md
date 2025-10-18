@@ -133,12 +133,88 @@ testWidgets('handles async data', (tester) async {
 });
 ```
 
+## Unit Testing Patterns
+
+### Testing Time-Dependent Logic
+
+**WRONG:**
+```dart
+test('should update elapsedTime', () async {
+  final state = service.createGame();
+
+  // ❌ NEVER use arbitrary delays in unit tests
+  await Future.delayed(const Duration(milliseconds: 10));
+
+  final newState = service.makeMove(state, position);
+  expect(newState.elapsedTime.inMilliseconds, greaterThan(10));
+});
+```
+
+**Why this is bad:**
+- Creates flaky tests that depend on system timing
+- Tests may pass on fast machines, fail on slow ones
+- Makes tests slower than necessary
+- Tests implementation details (timing) rather than behavior
+
+**CORRECT Approaches:**
+
+#### 1. Test behavior, not exact timing
+```dart
+test('should update elapsedTime', () {
+  final state = service.createGame();
+  final newState = service.makeMove(state, position);
+
+  // ✅ Test that time is tracked (non-negative)
+  expect(newState.elapsedTime.inMicroseconds, greaterThanOrEqualTo(0));
+
+  // ✅ Test that time is reasonable (< 1 second for instant operation)
+  expect(newState.elapsedTime.inSeconds, lessThan(1));
+});
+```
+
+#### 2. Use deterministic time checks
+```dart
+test('should create new start time on reset', () {
+  final state = service.createGame();
+  final originalStartTime = state.startTime;
+
+  final resetState = service.resetGame(state);
+
+  // ✅ Deterministic: new time >= original
+  expect(
+    resetState.startTime.isAtSameMomentAs(originalStartTime) ||
+        resetState.startTime.isAfter(originalStartTime),
+    isTrue,
+  );
+});
+```
+
+#### 3. Mock time-dependent dependencies
+```dart
+test('should calculate timeout correctly', () {
+  final mockClock = MockClock();
+  when(() => mockClock.now()).thenReturn(DateTime(2024, 1, 1, 12, 0));
+
+  final service = GameService(clock: mockClock);
+
+  // ✅ No delays needed - time is controlled
+  expect(service.isTimeout(), isFalse);
+});
+```
+
+**Key Principle**: Test that time-related functionality **exists and works**, not the exact timing values.
+
 ## Common Anti-Patterns to Avoid
 
-### ❌ Arbitrary Waits
+### ❌ Arbitrary Waits in Widget Tests
 ```dart
 await tester.pump(const Duration(milliseconds: 100));  // NEVER
+```
+
+### ❌ Arbitrary Waits in Unit Tests
+```dart
 await Future.delayed(Duration(milliseconds: 100));      // NEVER
+Future.delayed(Duration(milliseconds: 10));             // NEVER (not even unawaited)
 ```
 
 ### ❌ Excessive pumpAndSettle() Calls
