@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../core/lifecycle/app_lifecycle_observer.dart';
 import '../../../data/repositories/game_state_persistence_repository.dart';
 import '../../../domain/models/game_result.dart';
 import '../../../domain/models/game_state.dart' as domain;
@@ -16,6 +17,7 @@ import 'game_state.dart';
 /// - Only coordinates between UI events and domain services
 /// - Transforms domain results into UI states
 /// - Manages UI-specific concerns (loading, error states)
+/// - Manages app lifecycle (auto-save on pause/detach)
 ///
 /// ARCHITECTURAL RULE: This BLoC MUST NOT contain game logic.
 /// All turn management, validation, and win detection is in GameService.
@@ -23,6 +25,7 @@ import 'game_state.dart';
 class GameBloc extends Bloc<GameEvent, GameState> {
   final GameService _gameService;
   final GameStatePersistenceRepository _persistenceRepository;
+  late final AppLifecycleObserver _lifecycleObserver;
 
   // Track session scores for persistence
   int _playerWins = 0;
@@ -48,6 +51,13 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<LoadSavedGameState>(_onLoadSavedGameState);
     on<ResumeGame>(_onResumeGame);
     on<ClearSavedGameState>(_onClearSavedGameState);
+
+    // Set up lifecycle observer for auto-save
+    _lifecycleObserver = AppLifecycleObserver(
+      onPaused: () => add(const SaveGameState()),
+      onDetached: () => add(const SaveGameState()),
+    );
+    _lifecycleObserver.register();
   }
 
   /// Handle game initialization
@@ -314,5 +324,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
         // Should never happen when game is finished
         break;
     }
+  }
+
+  @override
+  Future<void> close() {
+    _lifecycleObserver.unregister();
+    return super.close();
   }
 }

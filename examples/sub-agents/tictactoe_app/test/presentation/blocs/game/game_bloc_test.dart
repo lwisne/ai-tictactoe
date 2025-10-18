@@ -23,6 +23,8 @@ void main() {
     late GameBloc gameBloc;
 
     setUpAll(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+
       registerFallbackValue(
         PersistedGameState(
           gameState: GameService().createNewGame(
