@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/game_mode.dart';
+import '../../routes/app_router.dart';
 import '../blocs/game/game_bloc.dart';
 import '../blocs/game/game_event.dart';
 import '../blocs/game/game_state.dart' as game_states;
@@ -67,7 +68,7 @@ class HomePageContent extends StatelessWidget {
             // User wants to resume - emit event and navigate to game
             if (context.mounted) {
               context.read<GameBloc>().add(const ResumeGame());
-              context.push('/game');
+              context.push(AppRouter.game);
             }
           } else {
             // User wants new game - clear saved state
