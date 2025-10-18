@@ -20,6 +20,8 @@ import '../../helpers/test_helpers.dart';
 
 class MockGameBloc extends Mock implements GameBloc {}
 
+class FakeGameEvent extends Fake implements GameEvent {}
+
 /// Integration tests for LWI-151: Navigation patterns and back button behavior
 ///
 /// Tests the following requirements:
@@ -39,8 +41,7 @@ void main() {
     // Register fallback values for mocktail
     registerFallbackValue(GameMode.vsAi);
     registerFallbackValue(const game_states.GameInitial());
-    registerFallbackValue(const ResumeGame());
-    registerFallbackValue(const ClearSavedGameState());
+    registerFallbackValue(FakeGameEvent());
   });
 
   group('Back Button Behavior - LWI-151', () {
@@ -59,7 +60,7 @@ void main() {
         () => mockGameBloc.stream,
       ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
       when(() => mockGameBloc.close()).thenAnswer((_) async {});
-      when(() => mockGameBloc.add(any())).thenReturn(null);
+      when(() => mockGameBloc.add(any())).thenAnswer((_) {});
     });
 
     tearDown(() async {

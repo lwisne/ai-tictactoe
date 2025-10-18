@@ -17,6 +17,8 @@ import '../../helpers/test_helpers.dart';
 
 class MockGameBloc extends Mock implements GameBloc {}
 
+class FakeGameEvent extends Fake implements GameEvent {}
+
 void main() {
   late GameBloc mockGameBloc;
 
@@ -24,8 +26,7 @@ void main() {
     // Register fallback values for mocktail
     registerFallbackValue(GameMode.vsAi);
     registerFallbackValue(const game_states.GameInitial());
-    registerFallbackValue(const ResumeGame());
-    registerFallbackValue(const ClearSavedGameState());
+    registerFallbackValue(FakeGameEvent());
   });
 
   group('NavigationBehavior', () {
@@ -42,14 +43,14 @@ void main() {
         () => mockGameBloc.stream,
       ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
       when(() => mockGameBloc.close()).thenAnswer((_) async {});
-      when(() => mockGameBloc.add(any())).thenReturn(null);
+      when(() => mockGameBloc.add(any())).thenAnswer((_) {});
     });
 
-    tearDown() async {
+    tearDown(() async {
       // Clean up DI container
       await teardownTestDI();
       await mockGameBloc.close();
-    }
+    });
 
     Widget createTestApp() {
       return BlocProvider<GameBloc>.value(

@@ -18,13 +18,14 @@ import 'package:tictactoe_app/routes/app_router.dart';
 
 class MockGameBloc extends Mock implements GameBloc {}
 
+class FakeGameEvent extends Fake implements GameEvent {}
+
 void main() {
   late GameBloc mockGameBloc;
 
   setUpAll(() {
     registerFallbackValue(const game_states.GameInitial());
-    registerFallbackValue(const ResumeGame());
-    registerFallbackValue(const ClearSavedGameState());
+    registerFallbackValue(FakeGameEvent());
   });
 
   group('AppRouter', () {
@@ -43,7 +44,7 @@ void main() {
         () => mockGameBloc.stream,
       ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
       when(() => mockGameBloc.close()).thenAnswer((_) async {});
-      when(() => mockGameBloc.add(any())).thenReturn(null);
+      when(() => mockGameBloc.add(any())).thenAnswer((_) {});
     });
 
     tearDown(() async {
