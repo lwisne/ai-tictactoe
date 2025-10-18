@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../domain/models/game_state.dart' as domain;
+import '../../../domain/models/persisted_game_state.dart';
 
 /// Base class for all Game BLoC states
 ///
@@ -20,6 +21,18 @@ abstract class GameState extends Equatable {
 /// The game screen should show a loading or initialization UI.
 class GameInitial extends GameState {
   const GameInitial();
+}
+
+/// State when saved game is detected
+///
+/// The UI should show the resume game dialog.
+class GameSavedStateDetected extends GameState {
+  final PersistedGameState persistedState;
+
+  const GameSavedStateDetected(this.persistedState);
+
+  @override
+  List<Object?> get props => [persistedState];
 }
 
 /// State when game is actively in progress

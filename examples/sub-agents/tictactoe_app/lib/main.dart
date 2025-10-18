@@ -5,6 +5,7 @@ import 'core/bloc/app_bloc_observer.dart';
 import 'core/di/injection.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/blocs/game/game_bloc.dart';
+import 'presentation/blocs/game/game_event.dart';
 import 'presentation/blocs/settings/settings_bloc.dart';
 import 'presentation/blocs/theme/theme_bloc.dart';
 import 'presentation/blocs/theme/theme_event.dart';
@@ -37,9 +38,14 @@ class TicTacToeApp extends StatelessWidget {
           create: (context) =>
               getIt<ThemeBloc>()..add(const ThemeInitialized()),
         ),
-        // Game BLoC - manages game state (placeholder for now)
-        BlocProvider<GameBloc>(create: (context) => getIt<GameBloc>()),
-        // Settings BLoC - manages app settings (placeholder for now)
+        // Game BLoC - manages game state with lifecycle-aware persistence
+        // GameBloc internally manages AppLifecycleObserver for auto-save
+        // on app pause/detach. Load saved state on startup.
+        BlocProvider<GameBloc>(
+          create: (context) =>
+              getIt<GameBloc>()..add(const LoadSavedGameState()),
+        ),
+        // Settings BLoC - manages app settings
         BlocProvider<SettingsBloc>(create: (context) => getIt<SettingsBloc>()),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(

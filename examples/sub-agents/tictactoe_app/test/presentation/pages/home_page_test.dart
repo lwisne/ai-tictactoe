@@ -5,27 +5,43 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/theme/app_theme.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/domain/models/persisted_game_state.dart';
+import 'package:tictactoe_app/domain/services/game_service.dart';
+import 'package:tictactoe_app/domain/models/game_config.dart';
+import 'package:tictactoe_app/domain/models/player.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_event.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_state.dart'
+    as game_states;
 import 'package:tictactoe_app/presentation/cubits/game_mode_cubit.dart';
 import 'package:tictactoe_app/presentation/pages/home_page.dart';
 
 class MockGameModeCubit extends Mock implements GameModeCubit {}
 
+class MockGameBloc extends Mock implements GameBloc {}
+
 class MockGoRouter extends Mock implements GoRouter {}
+
+class FakeGameEvent extends Fake implements GameEvent {}
 
 void main() {
   late GameModeCubit mockGameModeCubit;
+  late GameBloc mockGameBloc;
   late GoRouter mockRouter;
 
   setUpAll(() {
     registerFallbackValue(GameMode.vsAi);
     registerFallbackValue(Uri.parse('/'));
+    registerFallbackValue(const game_states.GameInitial());
+    registerFallbackValue(FakeGameEvent());
   });
 
   setUp(() {
     mockGameModeCubit = MockGameModeCubit();
+    mockGameBloc = MockGameBloc();
     mockRouter = MockGoRouter();
 
-    // Default stub for state stream
+    // Default stubs for GameModeCubit
     when(
       () => mockGameModeCubit.state,
     ).thenReturn(const GameModeState(lastPlayedMode: null, isLoading: false));
@@ -38,26 +54,48 @@ void main() {
 
     // Stub close method
     when(() => mockGameModeCubit.close()).thenAnswer((_) async {});
+
+    // Default stubs for GameBloc
+    when(() => mockGameBloc.state).thenReturn(const game_states.GameInitial());
+    when(
+      () => mockGameBloc.stream,
+    ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
+    when(() => mockGameBloc.close()).thenAnswer((_) async {});
+    when(() => mockGameBloc.add(any())).thenAnswer((_) {});
   });
 
   tearDown(() async {
     await mockGameModeCubit.close();
+    await mockGameBloc.close();
   });
 
-  Widget createTestWidget({GameModeState? initialState}) {
-    if (initialState != null) {
-      when(() => mockGameModeCubit.state).thenReturn(initialState);
+  Widget createTestWidget({
+    GameModeState? gameModeState,
+    game_states.GameState? gameState,
+  }) {
+    if (gameModeState != null) {
+      when(() => mockGameModeCubit.state).thenReturn(gameModeState);
       when(
         () => mockGameModeCubit.stream,
-      ).thenAnswer((_) => Stream.value(initialState));
+      ).thenAnswer((_) => Stream.value(gameModeState));
+    }
+
+    if (gameState != null) {
+      when(() => mockGameBloc.state).thenReturn(gameState);
+      when(
+        () => mockGameBloc.stream,
+      ).thenAnswer((_) => Stream.value(gameState));
     }
 
     return MaterialApp(
       theme: AppTheme.lightTheme,
       home: InheritedGoRouter(
         goRouter: mockRouter,
-        child: BlocProvider<GameModeCubit>.value(
-          value: mockGameModeCubit,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<GameModeCubit>.value(value: mockGameModeCubit),
+            BlocProvider<GameBloc>.value(value: mockGameBloc),
+          ],
           child: const HomePageContent(),
         ),
       ),
@@ -100,7 +138,7 @@ void main() {
 
     testWidgets('should show loading indicator when loading', (tester) async {
       await tester.pumpWidget(
-        createTestWidget(initialState: const GameModeState(isLoading: true)),
+        createTestWidget(gameModeState: const GameModeState(isLoading: true)),
       );
       await tester.pump(); // Don't use pumpAndSettle for loading indicators
 
@@ -110,7 +148,7 @@ void main() {
     testWidgets('should highlight vsAi mode as last played', (tester) async {
       await tester.pumpWidget(
         createTestWidget(
-          initialState: const GameModeState(
+          gameModeState: const GameModeState(
             lastPlayedMode: GameMode.vsAi,
             isLoading: false,
           ),
@@ -127,7 +165,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         createTestWidget(
-          initialState: const GameModeState(
+          gameModeState: const GameModeState(
             lastPlayedMode: GameMode.twoPlayer,
             isLoading: false,
           ),
@@ -144,7 +182,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         createTestWidget(
-          initialState: const GameModeState(
+          gameModeState: const GameModeState(
             lastPlayedMode: null,
             isLoading: false,
           ),
@@ -297,6 +335,160 @@ void main() {
 
       // Verify minimum height (should be at least 80dp as per spec)
       expect(sizes.height, greaterThanOrEqualTo(80.0));
+    });
+  });
+
+  group('Resume Game Dialog Tests', () {
+    testWidgets(
+      'should show resume dialog when GameSavedStateDetected is emitted',
+      (tester) async {
+        // Create a saved game state
+        final gameService = GameService();
+        final gameState = gameService.createNewGame(
+          const GameConfig(gameMode: GameMode.twoPlayer, firstPlayer: Player.x),
+        );
+        final persistedState = PersistedGameState(
+          gameState: gameState,
+          savedAt: DateTime.now(),
+        );
+
+        // Set up the GameBloc to emit GameSavedStateDetected
+        when(() => mockGameBloc.stream).thenAnswer(
+          (_) =>
+              Stream.value(game_states.GameSavedStateDetected(persistedState)),
+        );
+        when(
+          () => mockGameBloc.state,
+        ).thenReturn(game_states.GameSavedStateDetected(persistedState));
+
+        await tester.pumpWidget(
+          createTestWidget(
+            gameState: game_states.GameSavedStateDetected(persistedState),
+          ),
+        );
+        await tester.pump(); // Trigger BlocListener
+
+        // Verify dialog is shown
+        expect(find.text('Resume Game?'), findsOneWidget);
+        expect(
+          find.text(
+            'You have an in-progress game. Would you like to resume where you left off?',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'should dispatch ResumeGame event and navigate when user taps Resume',
+      (tester) async {
+        // Create a saved game state
+        final gameService = GameService();
+        final gameState = gameService.createNewGame(
+          const GameConfig(gameMode: GameMode.twoPlayer, firstPlayer: Player.x),
+        );
+        final persistedState = PersistedGameState(
+          gameState: gameState,
+          savedAt: DateTime.now(),
+        );
+
+        // Set up router stub
+        when(() => mockRouter.push(any())).thenAnswer((_) async => null);
+
+        // Set up the GameBloc to emit GameSavedStateDetected
+        when(() => mockGameBloc.stream).thenAnswer(
+          (_) =>
+              Stream.value(game_states.GameSavedStateDetected(persistedState)),
+        );
+        when(
+          () => mockGameBloc.state,
+        ).thenReturn(game_states.GameSavedStateDetected(persistedState));
+
+        await tester.pumpWidget(
+          createTestWidget(
+            gameState: game_states.GameSavedStateDetected(persistedState),
+          ),
+        );
+        await tester.pump(); // Trigger BlocListener
+
+        // Tap the Resume button
+        await tester.tap(find.text('Resume'));
+        await tester.pumpAndSettle();
+
+        // Verify ResumeGame event was dispatched
+        verify(() => mockGameBloc.add(const ResumeGame())).called(1);
+
+        // Verify navigation to game page
+        verify(() => mockRouter.push('/game')).called(1);
+      },
+    );
+
+    testWidgets(
+      'should dispatch ClearSavedGameState event when user taps New Game',
+      (tester) async {
+        // Create a saved game state
+        final gameService = GameService();
+        final gameState = gameService.createNewGame(
+          const GameConfig(gameMode: GameMode.twoPlayer, firstPlayer: Player.x),
+        );
+        final persistedState = PersistedGameState(
+          gameState: gameState,
+          savedAt: DateTime.now(),
+        );
+
+        // Set up the GameBloc to emit GameSavedStateDetected
+        when(() => mockGameBloc.stream).thenAnswer(
+          (_) =>
+              Stream.value(game_states.GameSavedStateDetected(persistedState)),
+        );
+        when(
+          () => mockGameBloc.state,
+        ).thenReturn(game_states.GameSavedStateDetected(persistedState));
+
+        await tester.pumpWidget(
+          createTestWidget(
+            gameState: game_states.GameSavedStateDetected(persistedState),
+          ),
+        );
+        await tester.pump(); // Trigger BlocListener
+
+        // Tap the New Game button
+        await tester.tap(find.text('New Game'));
+        await tester.pumpAndSettle();
+
+        // Verify ClearSavedGameState event was dispatched
+        verify(() => mockGameBloc.add(const ClearSavedGameState())).called(1);
+
+        // Should NOT navigate
+        verifyNever(() => mockRouter.push(any()));
+      },
+    );
+
+    testWidgets('should not show resume dialog when state is GameInitial', (
+      tester,
+    ) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Verify dialog is not shown
+      expect(find.text('Resume Game?'), findsNothing);
+    });
+
+    testWidgets('should not show resume dialog when state is GameInProgress', (
+      tester,
+    ) async {
+      final gameService = GameService();
+      final gameState = gameService.createNewGame(
+        const GameConfig(gameMode: GameMode.twoPlayer, firstPlayer: Player.x),
+      );
+
+      await tester.pumpWidget(
+        createTestWidget(gameState: game_states.GameInProgress(gameState)),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify dialog is not shown
+      expect(find.text('Resume Game?'), findsNothing);
     });
   });
 }

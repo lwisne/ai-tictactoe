@@ -1,37 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/navigation/navigation_behavior.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_event.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_state.dart'
+    as game_states;
 import 'package:tictactoe_app/presentation/pages/home_page.dart';
 import 'package:tictactoe_app/presentation/pages/settings_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
 import '../../helpers/test_helpers.dart';
 
+class MockGameBloc extends Mock implements GameBloc {}
+
+class FakeGameEvent extends Fake implements GameEvent {}
+
 void main() {
+  late GameBloc mockGameBloc;
+
   setUpAll(() {
     // Register fallback values for mocktail
     registerFallbackValue(GameMode.vsAi);
+    registerFallbackValue(const game_states.GameInitial());
+    registerFallbackValue(FakeGameEvent());
   });
 
   group('NavigationBehavior', () {
     setUp(() async {
       // Set up DI container with mocked dependencies
       await setupTestDI();
+
+      // Create mock GameBloc with default behavior
+      mockGameBloc = MockGameBloc();
+      when(
+        () => mockGameBloc.state,
+      ).thenReturn(const game_states.GameInitial());
+      when(
+        () => mockGameBloc.stream,
+      ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
+      when(() => mockGameBloc.close()).thenAnswer((_) async {});
+      when(() => mockGameBloc.add(any())).thenAnswer((_) {});
     });
 
     tearDown(() async {
       // Clean up DI container
       await teardownTestDI();
+      await mockGameBloc.close();
     });
+
+    Widget createTestApp() {
+      return BlocProvider<GameBloc>.value(
+        value: mockGameBloc,
+        child: MaterialApp.router(routerConfig: AppRouter.router),
+      );
+    }
+
     testWidgets('goBack pops navigation stack when canPop is true', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       // Navigate to settings using push() to create a navigation stack
@@ -51,9 +82,7 @@ void main() {
     });
 
     testWidgets('goBack does nothing when canPop is false', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       // We're on home page (canPop is false with go_router at root)
@@ -71,9 +100,7 @@ void main() {
     });
 
     testWidgets('goHome navigates to home screen', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       // Navigate to settings (using go() is fine here since we're testing goHome())
@@ -95,9 +122,7 @@ void main() {
     testWidgets('canNavigateBack returns true when stack has routes', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       // Navigate to settings using push() to create a navigation stack
@@ -121,7 +146,12 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: testRouter));
+      await tester.pumpWidget(
+        BlocProvider<GameBloc>.value(
+          value: mockGameBloc,
+          child: MaterialApp.router(routerConfig: testRouter),
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Get context and verify canNavigateBack matches GoRouter's canPop()
@@ -136,9 +166,7 @@ void main() {
     testWidgets('showConfirmationDialog displays alert with correct text', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);
@@ -164,9 +192,7 @@ void main() {
     testWidgets('showConfirmationDialog returns true on confirm', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);
@@ -193,9 +219,7 @@ void main() {
     testWidgets('showConfirmationDialog returns false on cancel', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);
@@ -222,9 +246,7 @@ void main() {
     testWidgets('showExitGameConfirmation displays correct exit game dialog', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);
@@ -243,9 +265,7 @@ void main() {
     testWidgets('showExitGameConfirmation returns true on exit', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);
@@ -265,9 +285,7 @@ void main() {
     testWidgets('showExitGameConfirmation returns false on cancel', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(Scaffold).first);

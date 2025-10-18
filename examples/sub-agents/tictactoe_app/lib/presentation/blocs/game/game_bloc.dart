@@ -1,7 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../core/lifecycle/app_lifecycle_observer.dart';
+import '../../../data/repositories/game_state_persistence_repository.dart';
 import '../../../domain/models/game_result.dart';
+import '../../../domain/models/game_state.dart' as domain;
+import '../../../domain/models/persisted_game_state.dart';
 import '../../../domain/services/game_service.dart';
 import 'game_event.dart';
 import 'game_state.dart';
@@ -13,22 +17,47 @@ import 'game_state.dart';
 /// - Only coordinates between UI events and domain services
 /// - Transforms domain results into UI states
 /// - Manages UI-specific concerns (loading, error states)
+/// - Manages app lifecycle (auto-save on pause/detach)
 ///
 /// ARCHITECTURAL RULE: This BLoC MUST NOT contain game logic.
 /// All turn management, validation, and win detection is in GameService.
 @injectable
 class GameBloc extends Bloc<GameEvent, GameState> {
   final GameService _gameService;
+  final GameStatePersistenceRepository _persistenceRepository;
+  late final AppLifecycleObserver _lifecycleObserver;
 
-  GameBloc({required GameService gameService})
-    : _gameService = gameService,
-      super(const GameInitial()) {
+  // Track session scores for persistence
+  int _playerWins = 0;
+  int _aiWins = 0;
+  int _draws = 0;
+
+  // Store last saved state to avoid redundant saves
+  PersistedGameState? _lastSavedState;
+
+  GameBloc({
+    required GameService gameService,
+    required GameStatePersistenceRepository persistenceRepository,
+  }) : _gameService = gameService,
+       _persistenceRepository = persistenceRepository,
+       super(const GameInitial()) {
     // Register event handlers
     on<GameInitialized>(_onGameInitialized);
     on<StartNewGame>(_onStartNewGame);
     on<MakeMove>(_onMakeMove);
     on<UndoMove>(_onUndoMove);
     on<ResetGame>(_onResetGame);
+    on<SaveGameState>(_onSaveGameState);
+    on<LoadSavedGameState>(_onLoadSavedGameState);
+    on<ResumeGame>(_onResumeGame);
+    on<ClearSavedGameState>(_onClearSavedGameState);
+
+    // Set up lifecycle observer for auto-save
+    _lifecycleObserver = AppLifecycleObserver(
+      onPaused: () => add(const SaveGameState()),
+      onDetached: () => add(const SaveGameState()),
+    );
+    _lifecycleObserver.register();
   }
 
   /// Handle game initialization
@@ -69,9 +98,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   /// 1. Validate the move
   /// 2. Update game state if valid
   /// 3. Check if game finished
+  /// 4. Auto-save state if game ongoing
+  /// 5. Clear saved state if game finished
   ///
   /// IMPORTANT: Contains ZERO game logic - all logic is in GameService.
-  void _onMakeMove(MakeMove event, Emitter<GameState> emit) {
+  Future<void> _onMakeMove(MakeMove event, Emitter<GameState> emit) async {
     // Only process moves when game is in progress
     if (state is! GameInProgress) {
       return;
@@ -92,11 +123,17 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
       // ✅ CORRECT: BLoC decides UI state based on domain result
       if (newGameState.result != GameResult.ongoing) {
-        // Game finished - emit finished state
+        // Update session scores
+        _updateSessionScores(newGameState.result);
+
+        // Game finished - emit finished state and clear saved state
         emit(GameFinished(newGameState));
+        await _persistenceRepository.clearGameState();
+        _lastSavedState = null;
       } else {
-        // Game continues - emit in progress state
+        // Game continues - emit in progress state and save
         emit(GameInProgress(newGameState));
+        await _saveCurrentState(newGameState);
       }
     } catch (e) {
       emit(GameError('Failed to make move: $e'));
@@ -137,7 +174,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
   ///
   /// Coordinates with GameService to create a fresh game
   /// with the same configuration.
-  void _onResetGame(ResetGame event, Emitter<GameState> emit) {
+  Future<void> _onResetGame(ResetGame event, Emitter<GameState> emit) async {
     // Can only reset when we have an active game
     if (state is GameInitial || state is GameError) {
       return;
@@ -153,8 +190,145 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
       // ✅ CORRECT: Transform service result to UI state
       emit(GameInProgress(newGameState));
+
+      // Save the reset state
+      await _saveCurrentState(newGameState);
     } catch (e) {
       emit(GameError('Failed to reset game: $e'));
     }
+  }
+
+  /// Handle save game state
+  ///
+  /// Triggered by app lifecycle changes to persist current game.
+  Future<void> _onSaveGameState(
+    SaveGameState event,
+    Emitter<GameState> emit,
+  ) async {
+    // Only save when game is in progress
+    if (state is! GameInProgress) {
+      return;
+    }
+
+    final currentState = (state as GameInProgress).gameState;
+    await _saveCurrentState(currentState);
+  }
+
+  /// Handle load saved game state
+  ///
+  /// Triggered on app startup to check for saved in-progress games.
+  Future<void> _onLoadSavedGameState(
+    LoadSavedGameState event,
+    Emitter<GameState> emit,
+  ) async {
+    try {
+      final savedState = await _persistenceRepository.loadGameState();
+
+      if (savedState != null) {
+        // Restore session scores
+        _playerWins = savedState.playerWins;
+        _aiWins = savedState.aiWins;
+        _draws = savedState.draws;
+        _lastSavedState = savedState;
+
+        // Emit state to trigger resume dialog
+        emit(GameSavedStateDetected(savedState));
+      } else {
+        // No saved state - stay in initial state
+        emit(const GameInitial());
+      }
+    } catch (e) {
+      // Error loading state - clear it and continue
+      await _persistenceRepository.clearGameState();
+      emit(const GameInitial());
+    }
+  }
+
+  /// Handle resume game
+  ///
+  /// Triggered when user chooses to resume from the dialog.
+  void _onResumeGame(ResumeGame event, Emitter<GameState> emit) {
+    if (state is! GameSavedStateDetected) {
+      return;
+    }
+
+    final savedState = (state as GameSavedStateDetected).persistedState;
+
+    // Check if saved game is still ongoing
+    if (savedState.gameState.result == GameResult.ongoing) {
+      emit(GameInProgress(savedState.gameState));
+    } else {
+      // Saved game was finished - just show it as finished
+      emit(GameFinished(savedState.gameState));
+    }
+  }
+
+  /// Handle clear saved game state
+  ///
+  /// Triggered when user chooses "New Game" from resume dialog
+  /// or when game ends normally.
+  Future<void> _onClearSavedGameState(
+    ClearSavedGameState event,
+    Emitter<GameState> emit,
+  ) async {
+    await _persistenceRepository.clearGameState();
+    _lastSavedState = null;
+    _playerWins = 0;
+    _aiWins = 0;
+    _draws = 0;
+    emit(const GameInitial());
+  }
+
+  /// Helper: Save current state to persistent storage
+  ///
+  /// Only saves if state has changed since last save.
+  Future<void> _saveCurrentState(domain.GameState gameState) async {
+    final persistedState = PersistedGameState(
+      gameState: gameState,
+      playerWins: _playerWins,
+      aiWins: _aiWins,
+      draws: _draws,
+      savedAt: DateTime.now(),
+    );
+
+    // Skip save if state hasn't changed (compare only meaningful fields)
+    if (_lastSavedState != null &&
+        _lastSavedState!.gameState == persistedState.gameState &&
+        _lastSavedState!.playerWins == persistedState.playerWins &&
+        _lastSavedState!.aiWins == persistedState.aiWins &&
+        _lastSavedState!.draws == persistedState.draws) {
+      return;
+    }
+
+    await _persistenceRepository.saveGameState(persistedState);
+    _lastSavedState = persistedState;
+  }
+
+  /// Helper: Update session scores based on game result
+  ///
+  /// Note: This tracks all game results regardless of mode.
+  /// In single-player mode: Player.x is the user, Player.o is AI.
+  /// In two-player mode: Both players are users, so "wins" track X vs O.
+  void _updateSessionScores(GameResult result) {
+    switch (result) {
+      case GameResult.win:
+        _playerWins++;
+        break;
+      case GameResult.loss:
+        _aiWins++;
+        break;
+      case GameResult.draw:
+        _draws++;
+        break;
+      case GameResult.ongoing:
+        // Should never happen when game is finished
+        break;
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _lifecycleObserver.unregister();
+    return super.close();
   }
 }
