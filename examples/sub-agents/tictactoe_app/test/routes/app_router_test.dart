@@ -48,7 +48,7 @@ void main() {
 
       // Verify game page is displayed
       expect(find.byType(GamePage), findsOneWidget);
-      expect(find.text('Game Page'), findsOneWidget);
+      expect(find.text('Game'), findsOneWidget);
     });
 
     testWidgets(
