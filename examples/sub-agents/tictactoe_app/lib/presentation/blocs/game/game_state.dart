@@ -1,26 +1,61 @@
 import 'package:equatable/equatable.dart';
+import '../../../domain/models/game_state.dart' as domain;
 
-/// State for game management
+/// Base class for all Game BLoC states
 ///
-/// This is a placeholder implementation for the game BLoC.
-/// Future tasks will expand this with actual game state such as:
-/// - Board state (3x3 grid)
-/// - Current player
-/// - Game status (in progress, won, draw)
-/// - Score tracking
-class GameState extends Equatable {
-  final bool isInitialized;
-  final bool isLoading;
-
-  const GameState({this.isInitialized = false, this.isLoading = false});
-
-  GameState copyWith({bool? isInitialized, bool? isLoading}) {
-    return GameState(
-      isInitialized: isInitialized ?? this.isInitialized,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
+/// These states represent the UI state of the game screen.
+/// The GameBloc emits these states based on results from GameService.
+///
+/// IMPORTANT: These are UI states, not domain states.
+/// The domain.GameState (game logic state) is contained within these UI states.
+abstract class GameState extends Equatable {
+  const GameState();
 
   @override
-  List<Object?> get props => [isInitialized, isLoading];
+  List<Object?> get props => [];
+}
+
+/// Initial state when GameBloc is first created
+///
+/// The game screen should show a loading or initialization UI.
+class GameInitial extends GameState {
+  const GameInitial();
+}
+
+/// State when game is actively in progress
+///
+/// Contains the current game state from the domain layer.
+/// The UI should render the board and allow player interaction.
+class GameInProgress extends GameState {
+  final domain.GameState gameState;
+
+  const GameInProgress(this.gameState);
+
+  @override
+  List<Object?> get props => [gameState];
+}
+
+/// State when the game has finished
+///
+/// This could be a win, loss, or draw.
+/// The UI should show the final result and offer to play again.
+class GameFinished extends GameState {
+  final domain.GameState gameState;
+
+  const GameFinished(this.gameState);
+
+  @override
+  List<Object?> get props => [gameState];
+}
+
+/// State when there's an error
+///
+/// The UI should display an error message.
+class GameError extends GameState {
+  final String message;
+
+  const GameError(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }
