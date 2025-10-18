@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/domain/models/game_mode.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_event.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_state.dart'
+    as game_states;
 import 'package:tictactoe_app/presentation/pages/home_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_page.dart';
 import 'package:tictactoe_app/presentation/pages/settings_page.dart';
@@ -12,6 +17,8 @@ import 'package:tictactoe_app/presentation/pages/game_details_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
 import '../../helpers/test_helpers.dart';
+
+class MockGameBloc extends Mock implements GameBloc {}
 
 /// Integration tests for LWI-151: Navigation patterns and back button behavior
 ///
@@ -26,9 +33,14 @@ import '../../helpers/test_helpers.dart';
 ///
 /// Note: Uses AppRouter.router singleton with proper cleanup in tearDown
 void main() {
+  late GameBloc mockGameBloc;
+
   setUpAll(() {
     // Register fallback values for mocktail
     registerFallbackValue(GameMode.vsAi);
+    registerFallbackValue(const game_states.GameInitial());
+    registerFallbackValue(const ResumeGame());
+    registerFallbackValue(const ClearSavedGameState());
   });
 
   group('Back Button Behavior - LWI-151', () {
@@ -37,18 +49,35 @@ void main() {
       AppRouter.router.go('/');
       // Set up DI container with mocked dependencies
       await setupTestDI();
+
+      // Create mock GameBloc with default behavior
+      mockGameBloc = MockGameBloc();
+      when(
+        () => mockGameBloc.state,
+      ).thenReturn(const game_states.GameInitial());
+      when(
+        () => mockGameBloc.stream,
+      ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
+      when(() => mockGameBloc.close()).thenAnswer((_) async {});
+      when(() => mockGameBloc.add(any())).thenReturn(null);
     });
 
     tearDown(() async {
       // Clean up DI container
       await teardownTestDI();
+      await mockGameBloc.close();
     });
+
+    Widget createTestApp() {
+      return BlocProvider<GameBloc>.value(
+        value: mockGameBloc,
+        child: MaterialApp.router(routerConfig: AppRouter.router),
+      );
+    }
 
     group('Home Page', () {
       testWidgets('does not show back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Verify we're on home page
@@ -59,9 +88,7 @@ void main() {
       });
 
       testWidgets('is at root level and cannot pop', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Verify we're at root
@@ -72,9 +99,7 @@ void main() {
 
     group('Game Page', () {
       testWidgets('shows back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game using push to build navigation stack
@@ -86,9 +111,7 @@ void main() {
       });
 
       testWidgets('back button shows exit confirmation dialog', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game using push to build navigation stack
@@ -106,9 +129,7 @@ void main() {
       });
 
       testWidgets('cancel button keeps user on game page', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game using push to build navigation stack
@@ -129,9 +150,7 @@ void main() {
       });
 
       testWidgets('exit button navigates to home', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game using push to build navigation stack
@@ -154,9 +173,7 @@ void main() {
       testWidgets('Android system back button shows exit confirmation', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game using push to build navigation stack
@@ -179,9 +196,7 @@ void main() {
 
     group('Settings Page', () {
       testWidgets('shows back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to settings using push to build navigation stack
@@ -195,9 +210,7 @@ void main() {
       testWidgets('back button returns to home without confirmation', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to settings using push to build navigation stack
@@ -216,9 +229,7 @@ void main() {
       testWidgets('Android system back button returns to home directly', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to settings using push to build navigation stack
@@ -238,9 +249,7 @@ void main() {
 
     group('History Page', () {
       testWidgets('shows back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to history using push to build navigation stack
@@ -254,9 +263,7 @@ void main() {
       testWidgets('back button returns to home without confirmation', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to history using push to build navigation stack
@@ -275,9 +282,7 @@ void main() {
 
     group('Game Details Page', () {
       testWidgets('shows back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game details using push to build navigation stack
@@ -291,9 +296,7 @@ void main() {
       testWidgets('back button returns to history list without confirmation', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // First navigate to history, then to details to build proper stack
@@ -318,9 +321,7 @@ void main() {
 
     group('AI Difficulty Page', () {
       testWidgets('shows back button in AppBar', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to AI difficulty using push to build navigation stack
@@ -334,9 +335,7 @@ void main() {
       testWidgets('back button returns to home without confirmation', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to AI difficulty using push to build navigation stack
@@ -355,9 +354,7 @@ void main() {
 
     group('Navigation Flow', () {
       testWidgets('home -> settings -> back to home', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Start at home
@@ -377,9 +374,7 @@ void main() {
       testWidgets('home -> history -> details -> back to history', (
         tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Start at home
@@ -402,9 +397,7 @@ void main() {
       });
 
       testWidgets('game exit dialog navigates to home', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
         await tester.pumpAndSettle();
 
         // Navigate to game

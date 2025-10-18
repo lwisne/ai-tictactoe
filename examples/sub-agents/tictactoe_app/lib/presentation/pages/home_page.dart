@@ -6,8 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/game_mode.dart';
+import '../blocs/game/game_bloc.dart';
+import '../blocs/game/game_event.dart';
+import '../blocs/game/game_state.dart' as game_states;
 import '../cubits/game_mode_cubit.dart';
 import '../widgets/mode_selection_button.dart';
+import '../widgets/resume_game_dialog.dart';
 
 /// Home page - Game mode selection screen
 ///
@@ -53,158 +57,185 @@ class HomePageContent extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tic-Tac-Toe'),
-        centerTitle: true,
-        // Explicitly disable automatic back button (LWI-151 requirement)
-        automaticallyImplyLeading: false,
-        actions: [
-          // Settings button
-          Semantics(
-            button: true,
-            label: 'Settings',
-            child: IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              tooltip: 'Settings',
-              onPressed: () => context.push('/settings'),
-            ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: BlocBuilder<GameModeCubit, GameModeState>(
-          builder: (context, state) {
-            if (state.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+    return BlocListener<GameBloc, game_states.GameState>(
+      listener: (context, state) async {
+        // Show resume dialog when saved game is detected
+        if (state is game_states.GameSavedStateDetected) {
+          final shouldResume = await ResumeGameDialog.show(context);
+
+          if (shouldResume) {
+            // User wants to resume - emit event and navigate to game
+            if (context.mounted) {
+              context.read<GameBloc>().add(const ResumeGame());
+              context.push('/game');
             }
+          } else {
+            // User wants new game - clear saved state
+            if (context.mounted) {
+              context.read<GameBloc>().add(const ClearSavedGameState());
+            }
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Tic-Tac-Toe'),
+          centerTitle: true,
+          // Explicitly disable automatic back button (LWI-151 requirement)
+          automaticallyImplyLeading: false,
+          actions: [
+            // Settings button
+            Semantics(
+              button: true,
+              label: 'Settings',
+              child: IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Settings',
+                onPressed: () => context.push('/settings'),
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: BlocBuilder<GameModeCubit, GameModeState>(
+            builder: (context, state) {
+              if (state.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            return CustomScrollView(
-              slivers: [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacingL,
-                      vertical: AppTheme.spacingM,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Hero branding section
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // App icon/logo
-                              Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: colorScheme.primary.withOpacity(
-                                        0.2,
+              return CustomScrollView(
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacingL,
+                        vertical: AppTheme.spacingM,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Hero branding section
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // App icon/logo
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: colorScheme.primary.withOpacity(
+                                          0.2,
+                                        ),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 4),
                                       ),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.grid_3x3,
-                                  size: 80,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                              const SizedBox(height: AppTheme.spacingL),
-
-                              // App title
-                              Text(
-                                'Tic-Tac-Toe',
-                                style: theme.textTheme.displayLarge?.copyWith(
-                                  color: colorScheme.onSurface,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: AppTheme.spacingS),
-
-                              // Welcome subtitle
-                              Text(
-                                'Select a game mode to begin',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Mode selection buttons
-                        Expanded(
-                          flex: 3,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Play vs AI button
-                              ModeSelectionButton(
-                                mode: GameMode.vsAi,
-                                isLastPlayed:
-                                    state.lastPlayedMode == GameMode.vsAi,
-                                onTap: () =>
-                                    _onModeSelected(context, GameMode.vsAi),
-                              ),
-                              const SizedBox(height: AppTheme.spacingM),
-
-                              // Two Player button
-                              ModeSelectionButton(
-                                mode: GameMode.twoPlayer,
-                                isLastPlayed:
-                                    state.lastPlayedMode == GameMode.twoPlayer,
-                                onTap: () => _onModeSelected(
-                                  context,
-                                  GameMode.twoPlayer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // Bottom navigation section
-                        Expanded(
-                          flex: 1,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              const SizedBox(height: AppTheme.spacingL),
-                              // History button
-                              OutlinedButton.icon(
-                                onPressed: () => context.push('/history'),
-                                icon: const Icon(Icons.history),
-                                label: const Text('Game History'),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(double.infinity, 48),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppTheme.spacingL,
-                                    vertical: AppTheme.spacingM,
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.grid_3x3,
+                                    size: 80,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: AppTheme.spacingL),
+
+                                // App title
+                                Text(
+                                  'Tic-Tac-Toe',
+                                  style: theme.textTheme.displayLarge?.copyWith(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: AppTheme.spacingS),
+
+                                // Welcome subtitle
+                                Text(
+                                  'Select a game mode to begin',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onSurface.withOpacity(
+                                      0.7,
+                                    ),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+
+                          // Mode selection buttons
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Play vs AI button
+                                ModeSelectionButton(
+                                  mode: GameMode.vsAi,
+                                  isLastPlayed:
+                                      state.lastPlayedMode == GameMode.vsAi,
+                                  onTap: () =>
+                                      _onModeSelected(context, GameMode.vsAi),
+                                ),
+                                const SizedBox(height: AppTheme.spacingM),
+
+                                // Two Player button
+                                ModeSelectionButton(
+                                  mode: GameMode.twoPlayer,
+                                  isLastPlayed:
+                                      state.lastPlayedMode ==
+                                      GameMode.twoPlayer,
+                                  onTap: () => _onModeSelected(
+                                    context,
+                                    GameMode.twoPlayer,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Bottom navigation section
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                const SizedBox(height: AppTheme.spacingL),
+                                // History button
+                                OutlinedButton.icon(
+                                  onPressed: () => context.push('/history'),
+                                  icon: const Icon(Icons.history),
+                                  label: const Text('Game History'),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      48,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppTheme.spacingL,
+                                      vertical: AppTheme.spacingM,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

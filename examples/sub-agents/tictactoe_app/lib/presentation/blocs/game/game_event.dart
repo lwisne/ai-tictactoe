@@ -59,3 +59,33 @@ class UndoMove extends GameEvent {
 class ResetGame extends GameEvent {
   const ResetGame();
 }
+
+/// Event to save current game state to persistent storage
+///
+/// This is typically triggered by app lifecycle changes (paused/detached).
+class SaveGameState extends GameEvent {
+  const SaveGameState();
+}
+
+/// Event to load saved game state from persistent storage
+///
+/// This is triggered on app startup to check for saved in-progress games.
+class LoadSavedGameState extends GameEvent {
+  const LoadSavedGameState();
+}
+
+/// Event to resume a saved game
+///
+/// This is triggered when user chooses to resume from the dialog.
+class ResumeGame extends GameEvent {
+  const ResumeGame();
+}
+
+/// Event to clear saved game state
+///
+/// This is triggered when:
+/// - Game ends normally
+/// - User chooses "New Game" from resume dialog
+class ClearSavedGameState extends GameEvent {
+  const ClearSavedGameState();
+}

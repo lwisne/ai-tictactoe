@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:tictactoe_app/core/di/injection.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_event.dart';
+import 'package:tictactoe_app/presentation/blocs/game/game_state.dart'
+    as game_states;
 import 'package:tictactoe_app/presentation/pages/ai_difficulty_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_details_page.dart';
 import 'package:tictactoe_app/presentation/pages/game_page.dart';
@@ -10,24 +16,51 @@ import 'package:tictactoe_app/presentation/pages/home_page.dart';
 import 'package:tictactoe_app/presentation/pages/settings_page.dart';
 import 'package:tictactoe_app/routes/app_router.dart';
 
+class MockGameBloc extends Mock implements GameBloc {}
+
 void main() {
+  late GameBloc mockGameBloc;
+
+  setUpAll(() {
+    registerFallbackValue(const game_states.GameInitial());
+    registerFallbackValue(const ResumeGame());
+    registerFallbackValue(const ClearSavedGameState());
+  });
+
   group('AppRouter', () {
     setUp(() async {
       // Reset GetIt before each test to ensure a clean DI container
       await GetIt.instance.reset();
       // Initialize dependency injection for each test to prevent state pollution
       configureDependencies();
+
+      // Create mock GameBloc with default behavior
+      mockGameBloc = MockGameBloc();
+      when(
+        () => mockGameBloc.state,
+      ).thenReturn(const game_states.GameInitial());
+      when(
+        () => mockGameBloc.stream,
+      ).thenAnswer((_) => Stream.value(const game_states.GameInitial()));
+      when(() => mockGameBloc.close()).thenAnswer((_) async {});
+      when(() => mockGameBloc.add(any())).thenReturn(null);
     });
 
-    tearDown(() {
+    tearDown(() async {
       // Reset router to home to prevent state pollution between tests
       AppRouter.router.go('/');
+      await mockGameBloc.close();
     });
 
-    testWidgets('navigates to home page at initial location', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
+    Widget createTestApp() {
+      return BlocProvider<GameBloc>.value(
+        value: mockGameBloc,
+        child: MaterialApp.router(routerConfig: AppRouter.router),
       );
+    }
+
+    testWidgets('navigates to home page at initial location', (tester) async {
+      await tester.pumpWidget(createTestApp());
 
       // Verify home page is displayed
       expect(find.byType(HomePage), findsOneWidget);
@@ -38,9 +71,7 @@ void main() {
     testWidgets('navigates to game page when /game route is accessed', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to game page
       AppRouter.router.go(AppRouter.game);
@@ -54,9 +85,7 @@ void main() {
     testWidgets(
       'navigates to AI difficulty page when /ai-select route is accessed',
       (tester) async {
-        await tester.pumpWidget(
-          MaterialApp.router(routerConfig: AppRouter.router),
-        );
+        await tester.pumpWidget(createTestApp());
 
         // Navigate to AI difficulty page
         AppRouter.router.go(AppRouter.aiSelect);
@@ -71,9 +100,7 @@ void main() {
     testWidgets('navigates to history page when /history route is accessed', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to history page
       AppRouter.router.go(AppRouter.history);
@@ -88,9 +115,7 @@ void main() {
     testWidgets('navigates to game details page with gameId parameter', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       const testGameId = 'game-123';
 
@@ -106,9 +131,7 @@ void main() {
     testWidgets('navigates to settings page when /settings route is accessed', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to settings page
       AppRouter.router.go(AppRouter.settings);
@@ -120,9 +143,7 @@ void main() {
     });
 
     testWidgets('shows error page for invalid route', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
@@ -137,9 +158,7 @@ void main() {
     testWidgets('error page has back button that navigates home', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');
@@ -159,9 +178,7 @@ void main() {
     testWidgets('error page has home button that navigates home', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: AppRouter.router),
-      );
+      await tester.pumpWidget(createTestApp());
 
       // Navigate to invalid route
       AppRouter.router.go('/invalid-route');

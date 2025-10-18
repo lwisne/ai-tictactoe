@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/bloc/app_bloc_observer.dart';
 import 'core/di/injection.dart';
+import 'core/lifecycle/app_lifecycle_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/blocs/game/game_bloc.dart';
+import 'presentation/blocs/game/game_event.dart';
 import 'presentation/blocs/settings/settings_bloc.dart';
 import 'presentation/blocs/theme/theme_bloc.dart';
 import 'presentation/blocs/theme/theme_event.dart';
@@ -25,8 +27,46 @@ void main() async {
   runApp(const TicTacToeApp());
 }
 
-class TicTacToeApp extends StatelessWidget {
+class TicTacToeApp extends StatefulWidget {
   const TicTacToeApp({super.key});
+
+  @override
+  State<TicTacToeApp> createState() => _TicTacToeAppState();
+}
+
+class _TicTacToeAppState extends State<TicTacToeApp> {
+  late final AppLifecycleObserver _lifecycleObserver;
+  late final GameBloc _gameBloc;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Get GameBloc instance
+    _gameBloc = getIt<GameBloc>();
+
+    // Set up lifecycle observer for auto-save
+    _lifecycleObserver = AppLifecycleObserver(
+      onPaused: () {
+        // Save game state when app is backgrounded
+        _gameBloc.add(const SaveGameState());
+      },
+      onDetached: () {
+        // Final save when app is about to be killed
+        _gameBloc.add(const SaveGameState());
+      },
+    );
+    _lifecycleObserver.register();
+
+    // Load saved game state on startup
+    _gameBloc.add(const LoadSavedGameState());
+  }
+
+  @override
+  void dispose() {
+    _lifecycleObserver.unregister();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +77,9 @@ class TicTacToeApp extends StatelessWidget {
           create: (context) =>
               getIt<ThemeBloc>()..add(const ThemeInitialized()),
         ),
-        // Game BLoC - manages game state (placeholder for now)
-        BlocProvider<GameBloc>(create: (context) => getIt<GameBloc>()),
-        // Settings BLoC - manages app settings (placeholder for now)
+        // Game BLoC - manages game state with persistence
+        BlocProvider<GameBloc>.value(value: _gameBloc),
+        // Settings BLoC - manages app settings
         BlocProvider<SettingsBloc>(create: (context) => getIt<SettingsBloc>()),
       ],
       child: BlocBuilder<ThemeBloc, ThemeState>(

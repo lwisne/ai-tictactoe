@@ -13,6 +13,8 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:tictactoe_app/data/repositories/game_mode_repository.dart'
     as _i840;
+import 'package:tictactoe_app/data/repositories/game_state_persistence_repository.dart'
+    as _i505;
 import 'package:tictactoe_app/data/repositories/theme_repository.dart' as _i947;
 import 'package:tictactoe_app/domain/services/game_service.dart' as _i941;
 import 'package:tictactoe_app/presentation/blocs/game/game_bloc.dart' as _i130;
@@ -38,14 +40,20 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i840.GameModeRepository(),
     );
     gh.lazySingleton<_i941.GameService>(() => _i941.GameService());
+    gh.lazySingleton<_i505.GameStatePersistenceRepository>(
+      () => _i505.GameStatePersistenceRepository(),
+    );
+    gh.factory<_i130.GameBloc>(
+      () => _i130.GameBloc(
+        gameService: gh<_i941.GameService>(),
+        persistenceRepository: gh<_i505.GameStatePersistenceRepository>(),
+      ),
+    );
     gh.factory<_i126.ThemeBloc>(
       () => _i126.ThemeBloc(gh<_i947.ThemeRepository>()),
     );
     gh.factory<_i293.GameModeCubit>(
       () => _i293.GameModeCubit(gh<_i840.GameModeRepository>()),
-    );
-    gh.factory<_i130.GameBloc>(
-      () => _i130.GameBloc(gameService: gh<_i941.GameService>()),
     );
     return this;
   }
